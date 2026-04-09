@@ -556,7 +556,7 @@ def pending():
     description = request.form.get("videoDescription")
     thumbnail_file = request.files.get('thumbnailFile') # Get the thumbnail file from request.files
 
-    openai.api_key = "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"
+    openai.api_key = "YOUR API KEY"
     assemblyai.settings.api_key = os.getenv("ASSEMBLY_API_KEY")
 
     summary_prompt = {
