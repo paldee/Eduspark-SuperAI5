@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+{% block title %}Advicor{% endblock %}
+{% block cssContent %}
+<style>
+    /* Global body background */
+    body {
+        background-color: #0f0f1a; /* Dark background */
+        color: #e0e0e0; /* Light text color for overall page */
+    }
+
+    /* Chatbot Card - Reverted to original centered layout but with modern styling */
+    .chatbot-card {
+        background-color: #1e1e2d; /* Consistent card background from watchvdo */
+        color: #e0e0e0;
+        border: none;
+        border-radius: 1.5rem;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        padding: 0; /* Padding handled by inner elements */
+        overflow: hidden;
+        display: flex; /* Use flexbox for vertical layout */
+        flex-direction: column;
+        height: 700px; /* Fixed height for the main chat card */
+        max-width: 800px; /* Max width for larger screens */
+        width: 100%; /* Ensure it takes full width on smaller screens */
+    }
+
+    .chatbot-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 1.2rem;
+        background-color: #2b2b40; /* Slightly darker header */
+        color: #8c7ae6; /* Accent color for header */
+        border-top-left-radius: 1.25rem; /* Rounded corners match watchvdo */
+        border-top-right-radius: 1.25rem;
+        font-weight: 700;
+        font-size: 1.2rem;
+        flex-shrink: 0; /* Prevent header from shrinking */
+    }
+
+    .chat-messages {
+        flex-grow: 1; /* Allows message area to take available space */
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem; /* Space between messages */
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        background-color: #1a1a2b; /* Darker background for chat messages area */
+    }
+
+    /* Scrollbar styles for messages (modernized from watchvdo) */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #4a4a60; /* Darker thumb */
+        border-radius: 4px;
+    }
+    .chat-messages::-webkit-scrollbar-track {
+        background-color: #2b2b40; /* Darker track */
+    }
+
+    .chat-message {
+        padding: 0.8rem 1.1rem; /* Slightly more padding */
+        border-radius: 1.2rem; /* More rounded bubbles */
+        max-width: 85%; /* Slightly wider max width */
+        word-wrap: break-word; /* Ensures long words break to new lines */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow on bubbles */
+    }
+
+    .chat-message.user {
+        background-color: #8c7ae6; /* User bubble matches primary accent */
+        align-self: flex-end;
+        color: #fff;
+    }
+
+    .chat-message.ai {
+        background-color: #2b2b40; /* AI bubble matches input/header background */
+        align-self: flex-start;
+        color: #e0e0e0;
+    }
+
+    /* Style for links within chat messages */
+    .chat-message a {
+        color: #a0c4ff; /* A lighter blue for links */
+        text-decoration: underline;
+    }
+    .chat-message a:hover {
+        color: #c0d9ff;
+    }
+
+    .chat-input-container {
+        display: flex;
+        padding: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 10px;
+        flex-shrink: 0; /* Prevent input from shrinking */
+        background-color: #2a2a3d; /* Match card background */
+        border-bottom-left-radius: 1.5rem;
+        border-bottom-right-radius: 1.5rem;
+    }
+
+    .chat-input {
+        flex-grow: 1;
+        background-color: #2b2b40; /* Consistent input background */
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 0.75rem; /* More rounded input */
+        padding: 0.75rem 1rem;
+        color: #ffffff;
+        outline: none;
+        resize: none;
+        min-height: 45px; /* Slightly taller input */
+        font-size: 1rem;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .chat-input:focus {
+        border-color: #8c7ae6; /* Focus border matches accent */
+        box-shadow: 0 0 0 0.15rem rgba(140, 122, 230, 0.2);
+    }
+
+    .chat-input::placeholder {
+        color: #b0b0b0; /* Softer placeholder */
+    }
+
+    .chat-send-btn {
+        background-color: #8c7ae6; /* Send button matches primary accent */
+        border: none;
+        color: #fff;
+        border-radius: 0.75rem; /* More rounded button */
+        padding: 0.75rem 1.2rem;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    }
+
+    .chat-send-btn:hover {
+        background-color: #6d5bbf;
+        transform: translateY(-2px); /* Slight lift on hover */
+    }
+    .chat-send-btn:active {
+        transform: translateY(0); /* Press down effect */
+    }
+
+    .typing-indicator {
+        font-style: italic;
+        color: #b0b0b0;
+        padding: 0.5rem 1rem;
+        align-self: flex-start;
+        animation: pulse 1.5s infinite ease-in-out; /* Pulsing effect */
+    }
+
+    /* Keyframes for typing indicator */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Responsive adjustments for the main container */
+    @media (max-width: 767.98px) {
+        .chatbot-card {
+            height: 90vh; /* Make it taller on mobile */
+            border-radius: 1rem;
+        }
+        .chatbot-header {
+            font-size: 1.1rem;
+            padding: 0.7rem 1rem;
+        }
+        .chat-input-container {
+            padding: 0.8rem;
+        }
+        .chat-input, .chat-send-btn {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container mt-5 mb-5 d-flex justify-content-center align-items-center" style="min-height: calc(100vh - var(--navbar-height, 56px) - 2rem);">
+    <div class="chatbot-card">
+        <div class="chatbot-header">
+            <span>Advice Bot</span>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            </div>
+        <div class="chat-input-container">
+            <textarea id="chatInput" class="chat-input" placeholder="Type your message..."></textarea>
+            <button id="chatSendBtn" class="chat-send-btn">Send</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // Firebase imports (included for standard Canvas app setup)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Elements for the chatbot UI
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+
+        let chatHistory = []; // This will store the conversation history for Gemini API
+        let scholarshipData = []; // To store your scholarship data
+        let gameResults = []; // Initialize as empty, will be populated from localStorage
+
+        // --- NEW: Fetch Game Results from localStorage ---
+        function getGameResultsFromLocalStorage() {
+            try {
+                // Replace 'game_results_key' with the actual key your game uses
+                // e.g., if your game stores it as localStorage.setItem('myGameScores', JSON.stringify(results));
+                const storedResults = localStorage.getItem('game_results');
+                if (storedResults) {
+                    return JSON.parse(storedResults);
+                }
+            } catch (e) {
+                console.error("Error parsing game results from localStorage:", e);
+            }
+            return []; // Return an empty array if no data or error
+        }
+
+        // Attempt to load game results when the page loads
+        gameResults = getGameResultsFromLocalStorage();
+        console.log("Loaded game results:", gameResults);
+        // --- END NEW ---
+
+        // Initialize Firebase (standard for Canvas apps)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        let app, db, auth;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Sign in anonymously if no custom token is provided
+            if (typeof __initial_auth_token !== 'undefined') {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+            console.log("Firebase initialized and authenticated.");
+        } catch (error) {
+            console.error("Error initializing Firebase or authenticating:", error);
+            // Optionally display a user-friendly message about the error
+        }
+
+        /**
+         * Safely processes text content to automatically detect and convert URLs into clickable links,
+         * and handle newlines. It prioritizes Markdown-style links over plain URL detection.
+         * @param {string} text The raw text message.
+         * @returns {string} HTML string with clickable links and line breaks.
+         */
+        function processMessageContent(text) {
+            // 1. HTML escape basic characters to prevent XSS
+            let safeText = text.replace(/&/g, '&amp;')
+                               .replace(/</g, '&lt;')
+                               .replace(/>/g, '&gt;')
+                               .replace(/"/g, '&quot;')
+                               .replace(/'/g, '&#039;');
+
+            // 2. Convert newline characters to <br> tags
+            safeText = safeText.replace(/\n/g, '<br>');
+
+            // 3. Regex for Markdown-style links: [link text](url)
+            // This regex captures the link text and the URL.
+            const markdownLinkRegex = /\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g;
+            safeText = safeText.replace(markdownLinkRegex, (match, linkText, url) => {
+                // Ensure the URL is properly escaped for the href attribute
+                const escapedUrl = url.replace(/"/g, '&quot;');
+                return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
+            });
+
+            // 4. Regex for plain URLs (http/https, www., or domain.tld)
+            // This will catch any URLs not already processed by the Markdown link regex.
+            const plainUrlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+
+            return safeText.replace(plainUrlRegex, (match) => {
+                // If the match is already part of an <a> tag (from markdownLinkRegex), skip it.
+                // This is a simple heuristic; a more robust solution might involve DOM parsing.
+                if (match.includes('<a href=')) {
+                    return match;
+                }
+
+                let href = match;
+                // Prepend http:// if the URL doesn't start with http:// or https://
+                if (!match.startsWith('http://') && !match.startsWith('https://')) {
+                    href = 'http://' + match;
+                }
+                // Ensure the URL is properly escaped for the href attribute
+                const escapedHref = href.replace(/"/g, '&quot;');
+                return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+            });
+        }
+
+        // Function to add a message to the chat
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender); // 'user' or 'ai'
+            messageDiv.innerHTML = processMessageContent(text); // Use innerHTML for links and line breaks
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to the bottom
+        }
+
+        // Function to load scholarship data
+        async function loadScholarshipData() {
+            try {
+                const response = await fetch('/static/scholarship_detail.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                scholarshipData = await response.json();
+                console.log("Scholarship data loaded:", scholarshipData);
+            } catch (error) {
+                console.error("Error loading scholarship data:", error);
+                addMessage('ai', 'Failed to load scholarship information. I might not be able to answer questions about scholarships accurately.');
+            }
+        }
+
+        // Initialize chat history and display initial AI greeting
+        function initializeChatHistory() {
+            // Clear previous messages if re-initializing
+            chatMessages.innerHTML = '';
+            
+            // Set up the initial chat history for the AI's persona
+            chatHistory = [
+                {
+                    role: "user",
+                    parts: [{ text: `You are an expert advice bot. Your goal is to provide helpful and concise advice on general topics, career paths, and funding opportunities, including scholarships based on the provided data.
+                        
+                        **Instructions:**
+                        1.  **Analyze the User's Question:** Understand the user's request for advice.
+                        2.  **Provide Concise, Clear Answers:** Respond directly and accurately.
+                        3.  **Maintain a Helpful Tone:** Be encouraging and supportive.
+                        4.  **Offer General Advice:** If specific data is not available or relevant, provide general, helpful advice.
+                        5.  **Use Scholarship Data:** If the user asks about scholarships, use the provided scholarship data to answer truthfully. If you cannot find a relevant scholarship in the data, state that you don't have information on that specific scholarship but can offer general advice.
+                        6.  **Use Game Results for Recommendations:** If the user asks for recommendations on job, university, or school paths, analyze the provided 'game_results' data to identify subjects where the user performed well (higher totalScore relative to quizCount). Use this to suggest potential career fields or educational paths that align with their strengths. If no game results are provided or relevant, offer general advice.
+
+                        **Scholarship Data (if available):**
+                        ${scholarshipData.length > 0 ? JSON.stringify(scholarshipData, null, 2) : "No scholarship data loaded yet."}
+                        
+                        **User's Game Results (if available):**
+                        ${gameResults.length > 0 ? JSON.stringify(gameResults, null, 2) : "No game results provided."}
+                        
+                        From now on, the following messages will be the user's direct questions.` }]
+                },
+                {
+                    role: "model",
+                    parts: [{ text: "Hello! I'm here to help you with advice on funding and career paths. What's on your mind?" }]
+                }
+            ];
+            addMessage('ai', "Hello! I'm here to help you with advice on funding and career paths. What's on your mind?");
+        }
+
+        // Call loadScholarshipData and then initializeChatHistory
+        await loadScholarshipData();
+        initializeChatHistory();
+
+        // --- Event Listeners ---
+        chatSendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent new line in textarea
+                sendMessage();
+            }
+        });
+
+        // --- Chat Functions ---
+        async function sendMessage() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            addMessage('user', userMessage);
+            chatInput.value = '';
+
+            // Add user message to the chat history
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing-indicator');
+            typingIndicator.textContent = 'AI is typing...';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                // Ensure the initial prompt for the model includes the scholarship data AND game results every time
+                const initialPrompt = {
+                    role: "user",
+                    parts: [{ text: `You are an expert advice bot. Your goal is to provide helpful and concise advice on general topics, career paths, and funding opportunities, including scholarships based on the provided data.
+                        
+                        **Instructions:**
+                        1.  **Analyze the User's Question:** Understand the user's request for advice.
+                        2.  **Provide Concise, Clear Answers:** Respond directly and accurately.
+                        3.  **Maintain a Helpful Tone:** Be encouraging and supportive.
+                        4.  **Offer General Advice:** If specific data is not available or relevant, provide general, helpful advice.
+                        5.  **Use Scholarship Data:** If the user asks about scholarships, use the provided scholarship data to answer truthfully. If you cannot find a relevant scholarship in the data, state that you don't have information on that specific scholarship but can offer general advice.
+                        6.  **Use Game Results for Recommendations:** If the user asks for recommendations on job, university, or school paths, analyze the provided 'game_results' data to identify subjects where the user performed well (higher totalScore relative to quizCount). Use this to suggest potential career fields or educational paths that align with their strengths. If no game results are provided or relevant, offer general advice.
+
+                        **Scholarship Data (if available):**
+                        ${scholarshipData.length > 0 ? JSON.stringify(scholarshipData, null, 2) : "No scholarship data loaded yet."}
+                        
+                        **User's Game Results (if available):**
+                        ${gameResults.length > 0 ? JSON.stringify(gameResults, null, 2) : "No game results provided."}
+                        
+                        From now on, the following messages will be the user's direct questions.` }]
+                };
+
+                // The conversation history will now start with this detailed system instruction,
+                // followed by the actual user/model turns.
+                const payload = {
+                    contents: [initialPrompt, ...chatHistory.slice(1)] // Use slice(1) to avoid duplicating the initial greeting
+                };
+
+                const apiKey = "AIzaSyAlIzDDOercv2Zpl_Eo0j-4j1Orb1pqWF0"; // Canvas will automatically provide this at runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (chatMessages.contains(typingIndicator)) {
+                    chatMessages.removeChild(typingIndicator);
+                }
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+                    addMessage('ai', aiResponseText);
+                    // Add AI response to the chat history
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+                } else {
+                    addMessage('ai', 'Sorry, I could not generate a response. Please try again or rephrase your question.');
+                    console.error('AI response structure unexpected or empty:', result);
+                }
+            } catch (error) {
+                if (chatMessages.contains(typingIndicator)) {
+                    chatMessages.removeChild(typingIndicator);
+                }
+                addMessage('ai', 'An error occurred while connecting to the AI. Please check your network connection.');
+                console.error('Error fetching AI response:', error);
+            }
+        }
+    });
+</script>
+{% endblock %}

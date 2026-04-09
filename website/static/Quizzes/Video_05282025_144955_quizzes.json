@@ -1,0 +1,112 @@
+[
+  {
+    "type": "multiple_choice",
+    "question": "In the coin-flipping example, what values can the random variable X (number of heads in 5 flips) take?",
+    "choices": [
+      "Any real number between 0 and 5",
+      "Only whole numbers from 0 to 5",
+      "Any integer between 0 and 10",
+      "Only 0 or 5"
+    ],
+    "answer": "Only whole numbers from 0 to 5"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "What does a probability distribution represent in the context of a random variable?",
+    "choices": [
+      "The list of all possible experiments",
+      "The probabilities associated with each possible outcome of the random variable",
+      "The total number of trials conducted",
+      "The average value of the random variable"
+    ],
+    "answer": "The probabilities associated with each possible outcome of the random variable"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "Which of the following best describes a discrete random variable?",
+    "choices": [
+      "A variable that can take any value in a continuous interval",
+      "A variable that takes on a countable set of distinct values",
+      "A variable that only takes on values greater than zero",
+      "A variable that is always a fraction"
+    ],
+    "answer": "A variable that takes on a countable set of distinct values"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "What is the probability of getting exactly 3.5 heads in 100 coin flips?",
+    "choices": [
+      "Approximately 0.035",
+      "Exactly 0.5",
+      "Zero",
+      "Cannot be determined"
+    ],
+    "answer": "Zero"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "What happens to the shape of the probability distribution graph as the number of coin flips increases from 5 to 100?",
+    "choices": [
+      "It becomes more uniform",
+      "It becomes more bell-shaped and approaches a normal distribution",
+      "It becomes more skewed to the right",
+      "It becomes more jagged and irregular"
+    ],
+    "answer": "It becomes more bell-shaped and approaches a normal distribution"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "Which of the following is an example of a continuous random variable?",
+    "choices": [
+      "Number of heads in 5 coin flips",
+      "Number of cars passing by in an hour",
+      "Height of passersby measured in feet",
+      "Number of students in a class"
+    ],
+    "answer": "Height of passersby measured in feet"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "Why are continuous random variables represented with smooth probability curves rather than discrete points?",
+    "choices": [
+      "Because their values are limited to integers",
+      "Because they can take any real value in an interval, making the outcomes uncountable",
+      "Because their outcomes are always whole numbers",
+      "Because their probabilities are zero at all points"
+    ],
+    "answer": "Because they can take any real value in an interval, making the outcomes uncountable"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "What is the sample space for the experiment measuring the heights of passersby?",
+    "choices": [
+      "All whole number heights between 0 and 10 feet",
+      "All possible heights between a minimum and maximum value, including decimals",
+      "Only heights exactly 5 feet tall",
+      "Only heights measured in inches"
+    ],
+    "answer": "All possible heights between a minimum and maximum value, including decimals"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "In the coin-flipping example, what does the notation P(X = n) represent?",
+    "choices": [
+      "Probability that the number of heads is greater than n",
+      "Probability that the number of heads is less than n",
+      "Probability that the number of heads equals n",
+      "Number of trials performed"
+    ],
+    "answer": "Probability that the number of heads equals n"
+  },
+  {
+    "type": "multiple_choice",
+    "question": "When graphing the probability distribution of a discrete random variable, what type of plot is typically used?",
+    "choices": [
+      "A continuous line plot",
+      "A scatter plot with distinct points",
+      "A pie chart",
+      "A histogram with continuous bars"
+    ],
+    "answer": "A scatter plot with distinct points"
+  }
+]

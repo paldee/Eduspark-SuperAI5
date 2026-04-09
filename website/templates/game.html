@@ -1,0 +1,1435 @@
+{% extends "base.html" %}
+{% block title %}Game - {{ video_title }}{% endblock %}
+{% block cssContent %}
+<style>
+        /* Base styles for the body and font - Removed conflicting flex properties */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #4a69bd; /* Fallback for background */
+            color: #e2e8f0;
+            margin: 0;
+            overflow: hidden;
+            position: relative; /* Needed for absolute positioning of background */
+        }
+
+        /* Animated Background Layer */
+        .game-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #6a89cc, #4a69bd, #3b455a); /* Multiple colors for flowing effect */
+            background-size: 200% 200%; /* Larger than viewport for animation */
+            animation: backgroundFlow 20s ease infinite alternate; /* Slow, continuous flow */
+            z-index: -1; /* Behind everything */
+        }
+
+        @keyframes backgroundFlow {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        /* Main game container styling - MMORPG frame look */
+        .game-container {
+            background-color: #3f51b5; /* Deeper blue for the main panel */
+            border-radius: 2rem; /* More rounded */
+            /* More pronounced shadow and inner glow */
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.15);
+            padding: 2.5rem;
+            max-width: 90%;
+            width: 800px;
+            display: flex; /* Bootstrap d-flex equivalent */
+            flex-direction: column; /* Bootstrap flex-column equivalent */
+            gap: 2rem; /* Custom gap, Bootstrap has g-4 for 2rem */
+            position: relative;
+            overflow: hidden;
+            border: 6px solid #fcd34d; /* Thicker, gold border */
+            animation: fadeIn 1s ease-out;
+            /* Adjusted margin to center horizontally and provide vertical spacing */
+            margin: 2rem auto; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Screen shake effect */
+        .shake-effect {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-8px, -2px); }
+            20% { transform: translate(8px, 2px); }
+            30% { transform: translate(-10px, -3px); }
+            40% { transform: translate(10px, 3px); }
+            50% { transform: translate(-10px, -3px); }
+            60% { transform: translate(10px, 3px); }
+            70% { transform: translate(-8px, -2px); }
+            80% { transform: translate(8px, 2px); }
+            90% { transform: translate(-3px, -1px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* Styling for common game sections (dialogue, game area, question, result) - Inner panels */
+        .dialogue-box, .game-area, .question-area, .result-area {
+            background-color: #2d3748; /* Darker blue-gray for inner panels */
+            border-radius: 1.25rem; /* More rounded */
+            padding: 2rem;
+            box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5); /* Deeper inner shadow */
+            border: 3px solid #a0aec0; /* Thicker, lighter border */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Health bar container styling */
+        .health-bar-container {
+            width: 100%;
+            background-color: #4a5568; /* Darker background for empty health bar */
+            border-radius: 0.75rem;
+            overflow: hidden;
+            height: 1.8rem;
+            border: 2px solid #a0aec0; /* Lighter border for health bar container */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Actual health bar styling - More vibrant gradients */
+        .health-bar {
+            height: 100%;
+            background: linear-gradient(to right, #ef4444, #dc2626);
+            transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Health bar pulse animation */
+        @keyframes healthPulse {
+            0% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 255, 255, 0.3); }
+            50% { transform: scale(1.02); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); }
+            100% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 255, 255, 0.3); }
+        }
+        .health-bar.pulse {
+            animation: healthPulse 0.3s ease-out;
+        }
+
+        /* Player and Boss character styling - More vibrant and defined */
+        .player-character {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #68d391, #48bb78); /* Brighter green gradient */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(104, 211, 145, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.2); /* Stronger glow */
+            border: 4px solid #fff; /* White border for contrast */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            animation: player-idle 2s infinite alternate ease-in-out; /* Player idle animation */
+        }
+
+        /* Player idle animation */
+        @keyframes player-idle {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.01); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        .boss-character {
+            background: linear-gradient(135deg, #f56565, #e53e3e); /* Brighter red gradient */
+            border-radius: 1.5rem;
+            width: 110px;
+            height: 110px;
+            border: 4px solid #fff; /* White border for contrast */
+            box-shadow: 0 0 15px rgba(245, 101, 101, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.2); /* Stronger glow */
+            animation: boss-idle 2.5s infinite alternate ease-in-out;
+        }
+
+        /* Boss idle animation */
+        @keyframes boss-idle {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.02); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        /* Attack animation for characters */
+        .attack-animation {
+            animation: character-attack 0.4s ease-out;
+        }
+
+        @keyframes character-attack {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(30px) scale(1.1); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        /* Damage animation for characters */
+        .damage-animation {
+            animation: character-damage 0.3s ease-in-out;
+        }
+
+        @keyframes character-damage {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-8px) rotate(-5deg); }
+            50% { transform: translateX(8px) rotate(5deg); }
+            75% { transform: translateX(-8px) rotate(-5deg); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+
+        /* Primary button styling (used for Next, Play Again) - MMORPG style */
+        .button-primary {
+            /* Replaced Tailwind with Bootstrap classes and custom styles */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            border-radius: 1.5rem; /* rounded-3xl */
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.4); /* shadow-lg */
+            transition: all 0.3s ease-in-out; /* transition duration-300 ease-in-out transform */
+            background-image: linear-gradient(to bottom right, #4299e1, #2b6cb0); /* Diagonal gradient */
+            border: 3px solid #1a4f89; /* Thicker border */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.2); /* Stronger shadow with inner glow */
+        }
+        .button-primary:hover {
+            background-image: linear-gradient(to bottom right, #3182ce, #2c5282); /* Darker gradient on hover */
+            transform: translateY(-3px) scale(1.03); /* More pronounced lift and scale */
+            box-shadow: 0 12px 25px rgba(0,0,0,0.7), inset 0 0 15px rgba(255,255,255,0.3);
+            animation: buttonJiggle 0.3s ease-out forwards; /* Jiggle on hover */
+        }
+        .button-primary:active {
+            transform: translateY(0) scale(0.97); /* Deeper press */
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.6);
+        }
+
+        /* Answer button styling - MMORPG style */
+        .button-answer {
+            /* Replaced Tailwind with Bootstrap classes and custom styles */
+            color: white;
+            font-weight: 600; /* font-semibold */
+            padding: 1rem 1.5rem; /* py-4 px-6 */
+            border-radius: 1rem; /* rounded-2xl */
+            box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.2); /* shadow-md */
+            transition: all 0.2s ease-in-out; /* transition duration-200 ease-in-out */
+            text-align: left; /* text-left */
+            width: 100%; /* w-full */
+            background-image: linear-gradient(to bottom right, #718096, #4a5568); /* Diagonal gradient */
+            border: 2px solid #2d3748; /* Thicker border */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 0 5px rgba(255,255,255,0.1);
+        }
+        .button-answer:hover {
+            background-image: linear-gradient(to bottom right, #5a6270, #3b455a); /* Darker gradient on hover */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(255,255,255,0.2);
+            transform: translateY(-2px) scale(1.01); /* More pronounced lift and scale on hover */
+            animation: buttonJiggle 0.3s ease-out forwards; /* Jiggle on hover */
+        }
+        .button-answer:active {
+            transform: scale(0.97); /* transform scale-97 */
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Button Jiggle/Bounce on hover (runs once) */
+        @keyframes buttonJiggle {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-3px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(-1px); }
+        }
+
+        /* Styling for correct answer button */
+        .button-answer.correct {
+            background: linear-gradient(to bottom right, #48bb78, #38a169); /* Green gradient */
+            border-color: #2f855a;
+            box-shadow: 0 0 20px rgba(56, 161, 105, 0.8); /* Stronger glow */
+            animation: answerPop 0.3s ease-out forwards; /* Added pop animation */
+        }
+
+        /* Styling for incorrect answer button */
+        .button-answer.incorrect {
+            background: linear-gradient(to bottom right, #e53e3e, #c53030); /* Red gradient */
+            border-color: #c53030;
+            box-shadow: 0 0 20px rgba(229, 62, 62, 0.8); /* Stronger glow */
+            animation: answerPop 0.3s ease-out forwards; /* Added pop animation */
+        }
+
+        /* Answer button pop animation */
+        @keyframes answerPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        /* Utility class to hide elements */
+        .hidden {
+            display: none;
+        }
+
+        /* Boss entrance text styling - Fine-tuned for visibility */
+        .boss-intro-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.2rem; /* Adjusted font size for better fit */
+            font-weight: 800;
+            color: #ff0000;
+            text-shadow: 0 0 30px rgba(255, 0, 0, 1), 0 0 15px rgba(255, 255, 255, 0.7);
+            z-index: 100;
+            text-align: center;
+            opacity: 0;
+            animation: none;
+            word-break: break-word; /* Allow long words to break */
+            padding: 0 1rem;
+            box-sizing: border-box;
+            width: 100%;
+            line-height: 1.2;
+        }
+
+        @keyframes bossTextAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* Hold full opacity longer */
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Timer display styling */
+        .timer-display {
+            font-size: 1.8rem; /* Smaller font for number inside bar */
+            font-weight: 800;
+            color: #fff; /* White text for contrast */
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+            position: absolute; /* Position inside the bar */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2; /* Above the bar fill */
+        }
+
+        /* Timer Bar Styling */
+        .timer-bar-container {
+            width: 100%;
+            background-color: #4a5568; /* Dark background for empty bar */
+            border-radius: 0.75rem;
+            overflow: hidden;
+            height: 2.5rem; /* Taller bar */
+            border: 2px solid #a0aec0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1rem; /* Space below the bar */
+            position: relative; /* For absolute positioning of number */
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%; /* Initial full width */
+            background: linear-gradient(to right, #fcd34d, #d97706); /* Yellow/Orange for full time */
+            transition: width 0.5s ease-in-out, background 0.5s ease-in-out;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 8px rgba(252, 211, 77, 0.5);
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 1;
+        }
+
+        .timer-bar.warning {
+            background: linear-gradient(to right, #f59e0b, #d97706); /* Orange */
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+        }
+
+        .timer-bar.critical {
+            background: linear-gradient(to right, #ef4444, #dc2626); /* Red */
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+        }
+
+
+        /* QTE Overlay and Button Styling */
+        .qte-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 101;
+        }
+
+        .qte-button {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(45deg, #fcd34d, #d97706);
+            border-radius: 50%;
+            border: 6px solid #fff;
+            box-shadow: 0 0 30px rgba(252, 211, 77, 0.9);
+            cursor: pointer;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            animation: qtePulse 0.4s infinite alternate, qteFadeOut 1s forwards;
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes qtePulse {
+            from { transform: scale(1) translate(-50%, -50%); }
+            to { transform: scale(1.15) translate(-50%, -50%); }
+        }
+
+        @keyframes qteFadeOut {
+            0% { opacity: 1; transform: scale(1) translate(-50%, -50%); }
+            100% { opacity: 0; transform: scale(0.5) translate(-50%, -50%); }
+        }
+
+        /* QTE Button Hit Effect */
+        @keyframes qteHit {
+            0% { transform: scale(1) translate(-50%, -50%); }
+            50% { transform: scale(0.9) translate(-50%, -50%); }
+            100% { transform: scale(1) translate(-50%, -50%); }
+        }
+        .qte-button.hit {
+            animation: qteHit 0.2s ease-out forwards;
+        }
+
+        /* Dark Overlay for boss entrance */
+        .dark-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .dark-overlay.active {
+            opacity: 1;
+        }
+
+        /* Flash Effect for boss entrance */
+        .flash-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 1);
+            z-index: 102;
+            opacity: 0;
+            animation: flash 0.1s ease-out forwards;
+        }
+
+        @keyframes flash {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Dramatic word styling for dialogue */
+        @keyframes fadeInPulse {
+            0% { opacity: 0.5; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .dramatic-word {
+            color: #fcd34d; /* Yellow color */
+            font-weight: 800; /* Extra bold */
+            text-shadow: 0 0 8px rgba(252, 211, 77, 0.7); /* Subtle glow */
+            animation: fadeInPulse 0.8s ease-out forwards; /* Apply animation */
+            display: inline-block; /* Needed for transform on span */
+        }
+
+        /* Floating Damage/Heal Numbers */
+        @keyframes floatUpAndFade {
+            0% { transform: translateY(0) translateX(-50%) opacity(1); }
+            100% { transform: translateY(-50px) translateX(-50%) opacity(0); }
+        }
+        .damage-number {
+            position: absolute;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ef4444; /* Red for damage */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            animation: floatUpAndFade 1s ease-out forwards;
+            pointer-events: none; /* Allow clicks to pass through */
+            z-index: 50; /* Above characters, below overlays */
+            left: 50%; /* Centered horizontally relative to its parent */
+            top: 50%; /* Adjusted dynamically in JS */
+            transform: translateX(-50%); /* Centered horizontally */
+        }
+        .damage-number.heal {
+            color: #68d391; /* Green for heal */
+        }
+
+        /* Game Message Pop */
+        @keyframes messagePop {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .game-message-animated {
+            animation: messagePop 0.4s ease-out forwards;
+        }
+
+        /* Question Fade In */
+        @keyframes questionFadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .question-text-animated {
+            animation: questionFadeIn 0.5s ease-out forwards;
+        }
+
+        /* Result Title Entry */
+        @keyframes resultTitleEntry {
+            0% { opacity: 0; transform: scale(0.5) translateY(-20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .result-title-animated {
+            animation: resultTitleEntry 0.6s ease-out forwards;
+        }
+
+        /* Result Stats/Quote Fade In */
+        @keyframes resultTextFadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        .result-text-animated {
+            animation: resultTextFadeIn 0.8s ease-out forwards;
+        }
+
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1.5rem;
+                gap: 1.5rem;
+                border-radius: 1rem;
+                margin-top: 4rem; /* Adjust for smaller screens if needed */
+            }
+
+            .dialogue-box, .game-area, .question-area, .result-area {
+                padding: 1.2rem;
+                border-radius: 0.75rem;
+            }
+
+            .player-character, .boss-character {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+
+            .boss-character {
+                width: 90px;
+                height: 90px;
+            }
+
+            .button-primary, .button-answer {
+                padding: 0.85rem 1.2rem;
+                font-size: 0.95rem;
+                border-radius: 0.75rem;
+            }
+
+            .boss-intro-text {
+                font-size: 2rem; /* Adjusted for mobile for better fit */
+            }
+
+            .timer-display {
+                font-size: 1.5rem; /* Smaller timer number on mobile */
+            }
+
+            .qte-button {
+                width: 100px;
+                height: 100px;
+                font-size: 2rem;
+            }
+
+            .damage-number {
+                font-size: 1.8rem; /* Smaller damage numbers on mobile */
+            }
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="game-background"></div>
+    <div id="darkOverlay" class="dark-overlay hidden"></div>
+    <div id="gameContainer" class="game-container">
+        <div id="bossIntroText" class="boss-intro-text hidden"></div>
+
+        <!-- <div id="qteOverlay" class="qte-overlay hidden">
+            <button id="qteButton" class="qte-button">คลิก!</button>
+        </div> -->
+
+        <div id="dialogueSection" class="dialogue-box">
+            <p id="dialogueText" class="fs-5 mb-4 text-secondary fw-medium"></p>
+            <button id="nextDialogueButton" class="button-primary w-100">ถัดไป</button>
+            <p id="loadingMessage" class="text-center small text-muted mt-2">กำลังสร้างบทสนทนา...</p>
+        </div>
+
+        <div id="gameArea" class="game-area hidden">
+            <h2 class="fs-3 fw-bolder mb-4 text-info text-center drop-shadow-lg">การต่อสู้บอส!</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex flex-column align-items-center">
+                    <div id="playerCharacter" class="player-character mb-2">P</div>
+                    <p class="fs-6 fw-semibold">พลังชีวิตผู้เล่น</p>
+                    <div class="health-bar-container">
+                        <div id="playerHealthBar" class="health-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="fs-1 fw-bolder text-white mx-4 drop-shadow-lg">VS</div>
+                <div class="d-flex flex-column align-items-center">
+                    <div id="bossCharacter" class="boss-character mb-2">B</div>
+                    <p class="fs-6 fw-semibold">พลังชีวิตบอส</p>
+                    <div class="health-bar-container">
+                        <div id="bossHealthBar" class="health-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+            <p id="gameMessage" class="text-center fs-5 fw-bold text-warning mt-2"></p>
+        </div>
+
+        <div id="questionArea" class="question-area hidden">
+            <h3 class="fs-3 fw-bolder mb-4 text-info">เวลาตอบคำถาม!</h3>
+            <div class="timer-bar-container">
+                <div id="timerBar" class="timer-bar"></div>
+                <span id="timerDisplay" class="timer-display"></span>
+            </div>
+            <p id="questionText" class="fs-5 mb-4 text-light fw-medium"></p>
+            <div id="answerButtons" class="row row-cols-1 row-cols-md-2 g-4">
+                <div class="col"><button class="button-answer" data-index="0"></button></div>
+                <div class="col"><button class="button-answer" data-index="1"></button></div>
+                <div class="col"><button class="button-answer" data-index="2"></button></div>
+                <div class="col"><button class="button-answer" data-index="3"></button></div>
+            </div>
+        </div>
+
+        <div id="resultArea" class="result-area hidden">
+            <h3 id="resultTitle" class="fs-2 fw-bolder mb-4 text-center text-purple-300 drop-shadow-lg"></h3>
+            <p id="resultStats" class="fs-6 mb-2 text-center text-light"></p>
+            <p id="resultQuote" class="fs-5 mb-4 text-center text-warning fw-semibold">กำลังสร้างคำคม...</p>
+            <button id="playAgainButton" class="button-primary w-100">เล่นอีกครั้ง</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Game State Variables ---
+        let gameState = 'dialogue'; // 'dialogue', 'bossFight', 'question', 'defeatDialogue', 'result'
+        let playerHealth = 100;
+        let bossHealth = 100;
+        const maxHealth = 250;
+        const bossMaxHealth = 100
+        const playerDamage = 20;
+        const bossDamage = 25;
+
+        let currentDialogueIndex = 0;
+        let currentDefeatDialogueIndex = 0; // New index for defeat dialogue
+        let currentQuestionIndex = 0;
+        let correctAnswersCount = 0;
+        let incorrectAnswersCount = 0;
+        let totalQuestionsAnswered = 0;
+        const typingSpeed = 30;
+
+        const questionTimeLimit = 15;
+        let currentTimer = questionTimeLimit;
+        let timerInterval;
+
+        // Removed qteDuration and qteTimeoutId
+
+        // --- API Configuration ---
+        const API_KEY = "AIzaSyAlIzDDOercv2Zpl_Eo0j-4j1Orb1pqWF0"; // <<< IMPORTANT: Insert your actual API key here!
+
+        // --- Subject ID for saving game results ---
+        const subjectId = "{{ video_title }}"; // This will be replaced by your server-side rendering
+
+        // --- DOM Elements ---
+        const gameContainer = document.getElementById('gameContainer');
+        const dialogueSection = document.getElementById('dialogueSection');
+        const dialogueText = document.getElementById('dialogueText');
+        const nextDialogueButton = document.getElementById('nextDialogueButton');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const bossIntroTextElement = document.getElementById('bossIntroText');
+
+        // Removed qteOverlay and qteButton references
+        // const qteOverlay = document.getElementById('qteOverlay');
+        // const qteButton = document.getElementById('qteButton');
+
+        const gameArea = document.getElementById('gameArea');
+        const playerCharacter = document.getElementById('playerCharacter');
+        const bossCharacter = document.getElementById('bossCharacter');
+        const playerHealthBar = document.getElementById('playerHealthBar');
+        const bossHealthBar = document.getElementById('bossHealthBar');
+        const gameMessage = document.getElementById('gameMessage');
+
+        const questionArea = document.getElementById('questionArea');
+        const questionText = document.getElementById('questionText');
+        const answerButtons = document.querySelectorAll('#answerButtons .button-answer');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerBarContainer = document.getElementById('timerBarContainer');
+        const timerBar = document.getElementById('timerBar');
+
+        const resultArea = document.getElementById('resultArea');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultStats = document.getElementById('resultStats');
+        const resultQuote = document.getElementById('resultQuote');
+        const playAgainButton = document.getElementById('playAgainButton');
+
+        const darkOverlay = document.getElementById('darkOverlay');
+
+
+        // --- Game Data (Questions loaded from JSON) ---
+        let dialogues = [];
+        let defeatDialogues = [];
+        let shuffledQuestions = [];
+
+        // Keywords to highlight in dialogue for dramatic effect
+        const dramaticKeywords = [
+            "พลัง", "ภัยคุกคาม", "ความมืด", "ความรู้", "โกเลม", "อันตราย", "ความจริง", "แสงสว่าง", "ชัยชนะ", "พ่ายแพ้"
+        ];
+
+        /**
+         * Processes raw JSON question data into the game's expected format.
+         * @param {Array<Object>} jsonData - Array of question objects from JSON.
+         * @returns {Array<Object>} Transformed array of question objects.
+         */
+        function processQuestions(jsonData) {
+            return jsonData.map(item => {
+                const correctIndex = item.choices.indexOf(item.answer);
+                if (correctIndex === -1) {
+                    console.error("Error: Correct answer not found in choices for question:", item.question);
+                    // Fallback: if answer is not found, default to the first choice or handle error
+                    return {
+                        question: item.question,
+                        answers: item.choices,
+                        correct: 0 // Default to first answer if correct not found
+                    };
+                }
+                return {
+                    question: item.question,
+                    answers: item.choices,
+                    correct: correctIndex
+                };
+            });
+        }
+
+        // --- Utility Functions ---
+
+        /**
+         * Shuffles an array and returns the shuffled array along with the new index of the original correct answer.
+         * @param {object} questionObj - The question object with 'answers' array and 'correct' index.
+         * @returns {object} An object containing 'shuffledAnswers' and 'newCorrectIndex'.
+         */
+        function shuffleAnswers(questionObj) {
+            let answers = [...questionObj.answers];
+            const originalCorrectAnswerText = questionObj.answers[questionObj.correct];
+
+            for (let i = answers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [answers[i], answers[j]] = [answers[j], answers[i]];
+            }
+
+            const newCorrectIndex = answers.indexOf(originalCorrectAnswerText);
+
+            return { shuffledAnswers: answers, newCorrectIndex: newCorrectIndex };
+        }
+
+        /**
+         * Applies dramatic effects (e.g., highlighting) to specific keywords in a text.
+         * @param {HTMLElement} element - The DOM element whose innerHTML will be updated.
+         * @param {string} originalText - The original plain text content of the dialogue line.
+         */
+        function applyDramaticEffects(element, originalText) {
+            let processedText = originalText;
+            dramaticKeywords.forEach(keyword => {
+                const regex = new RegExp(keyword, 'g');
+                processedText = processedText.replace(regex, `<span class="dramatic-word">${keyword}</span>`);
+            });
+            element.innerHTML = processedText;
+        }
+
+        /**
+         * Displays a floating damage/heal number above a character.
+         * @param {HTMLElement} characterElement - The DOM element of the character (player or boss).
+         * @param {number} amount - The amount of damage or heal.
+         * @param {boolean} isDamage - True if damage, false if heal.
+         */
+        function showFloatingNumber(characterElement, amount, isDamage) {
+            const numberDiv = document.createElement('div');
+            numberDiv.textContent = isDamage ? `-${amount}` : `+${amount}`;
+            numberDiv.classList.add('damage-number');
+            if (!isDamage) {
+                numberDiv.classList.add('heal');
+            }
+
+            const rect = characterElement.getBoundingClientRect();
+            const containerRect = gameContainer.getBoundingClientRect();
+
+            numberDiv.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
+            numberDiv.style.top = `${rect.top - containerRect.top - 20}px`;
+
+            gameContainer.appendChild(numberDiv);
+
+            numberDiv.addEventListener('animationend', () => {
+                numberDiv.remove();
+            });
+        }
+
+
+        // --- Game Functions ---
+
+        /**
+         * Initializes or restarts the game.
+         * Resets health, counters, shuffles questions, and triggers AI dialogue generation.
+         */
+        async function startGame() {
+            playerHealth = maxHealth;
+            bossHealth = bossMaxHealth;
+            currentDialogueIndex = 0;
+            currentDefeatDialogueIndex = 0;
+            currentQuestionIndex = 0;
+            correctAnswersCount = 0;
+            incorrectAnswersCount = 0;
+            totalQuestionsAnswered = 0;
+            
+            // Fetch questions from external JSON
+            loadingMessage.textContent = "กำลังโหลดคำถาม...";
+            loadingMessage.classList.remove('hidden');
+            try {
+                const response = await fetch('{{ url_for('static', filename='Quizzes/' + title_id + '_quizzes' + '.json') }}'); // Assuming questions.json is in the same directory
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const rawData = await response.json();
+                const processedQuestions = processQuestions(rawData);
+                shuffledQuestions = [...processedQuestions].sort(() => Math.random() - 0.5);
+                loadingMessage.classList.add('hidden');
+            } catch (error) {
+                console.error("Failed to load or process questions from JSON:", error);
+                loadingMessage.textContent = "เกิดข้อผิดพลาดในการโหลดคำถาม";
+                // Fallback: If loading fails, game might not function correctly
+                // You might want to implement a more robust fallback (e.g., alert, show error message, or use a hardcoded small set)
+                alert("Error loading questions. Please ensure 'questions.json' is in the same directory and accessible.");
+                shuffledQuestions = []; // Ensure it's empty on failure
+                nextDialogueButton.disabled = true; // Disable if no questions loaded
+                return; // Stop game initialization if questions fail to load
+            }
+
+            updateHealthBars();
+            gameMessage.textContent = '';
+            gameMessage.classList.remove('game-message-animated');
+            showSection('dialogue');
+
+            dialogueText.textContent = '';
+            nextDialogueButton.disabled = true;
+            loadingMessage.classList.remove('hidden'); // Show loading for dialogue generation
+            
+            bossIntroTextElement.classList.add('hidden');
+            // qteOverlay.classList.add('hidden'); // Removed QTE overlay
+            darkOverlay.classList.add('hidden');
+
+            document.querySelectorAll('.damage-number').forEach(el => el.remove());
+
+            try {
+                dialogues = await generateDialogueWithAI();
+                loadingMessage.classList.add('hidden'); // Hide loading after dialogue generated
+                nextDialogueButton.disabled = false; // Enable button after dialogue ready
+                displayDialogue();
+            } catch (error) {
+                console.error("Failed to generate dialogue:", error);
+                dialogueText.textContent = "เกิดข้อผิดพลาดในการสร้างบทสนทนา กรุณาลองใหม่อีกครั้ง";
+                loadingMessage.classList.add('hidden');
+                nextDialogueButton.disabled = true;
+            }
+        }
+
+        /**
+         * Generates introductory dialogue using the Gemini AI model.
+         * @returns {Promise<string[]>} A promise that resolves to an array of dialogue lines.
+         */
+        async function generateDialogueWithAI() {
+            const prompt = "สร้างบทสนทนาแนะนำสั้นๆ ที่น่าสนใจ ในธีมแฟนตาซี สำหรับเกมต่อสู้บอสเพื่อการศึกษา บทสนทนาควรกำหนดฉาก แนะนำภัยคุกคาม (เช่น 'อิกนอแรนซ์ โกเลม') และอธิบายว่าความรู้คือกุญแจสู่การเอาชนะมัน จัดเตรียม 4-6 บรรทัดที่แตกต่างกัน แต่ละบรรทัดลงท้ายด้วยเครื่องหมายวรรคตอน และคั่นด้วยการขึ้นบรรทัดใหม่ ตรวจสอบให้แน่ใจว่าน้ำเสียงเป็นการผจญภัยและเร่งด่วนเล็กน้อย";
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`; // Use API_KEY
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                return text.split('\n').filter(line => line.trim() !== '');
+            } else {
+                throw new Error("AI response structure unexpected or content missing.");
+            }
+        }
+
+        /**
+         * Generates defeat dialogue using the Gemini AI model.
+         * @returns {Promise<string[]>} A promise that resolves to an array of dialogue lines.
+         */
+        async function generateDefeatDialogueWithAI() {
+            const prompt = "สร้างบทสนทนาสั้นๆ ที่น่าตื่นเต้นและเฉลิมฉลองชัยชนะ หลังจากเอาชนะ 'อิกนอแรนซ์ โกเลม' ในเกมต่อสู้เพื่อการศึกษา บทสนทนาควรเน้นย้ำถึงพลังของความรู้และชัยชนะเหนือความไม่รู้ จัดเตรียม 3-5 บรรทัดที่แตกต่างกัน แต่ละบรรทัดลงท้ายด้วยเครื่องหมายวรรคตอน และคั่นด้วยการขึ้นบรรทัดใหม่ น้ำเสียงควรเป็นชัยชนะและสร้างแรงบันดาลใจ";
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`; // Use API_KEY
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                return text.split('\n').filter(line => line.trim() !== '');
+            } else {
+                throw new Error("AI response structure unexpected or content missing for defeat dialogue.");
+            }
+        }
+
+        /**
+         * Generates a personalized end quote using the Gemini AI model.
+         * @param {number} percentage - The player's correct answer percentage.
+         * @param {boolean} playerWon - True if the player won the game, false otherwise.
+         * @returns {Promise<string>} A promise that resolves to the generated quote.
+         */
+        async function generateQuoteWithAI(percentage, playerWon) {
+            let winStatus = playerWon ? "ชนะ" : "แพ้";
+            let prompt = `ผู้เล่นทำคะแนนความแม่นยำได้ ${percentage}% ในเกมต่อสู้บอสเพื่อการศึกษา และ${winStatus}เกม โปรดสร้างคำคมให้กำลังใจสั้นๆ (ไม่เกิน 20 คำ) เป็นภาษาไทย ที่เหมาะสมกับผลลัพธ์นี้`;
+            
+            if (percentage >= 80) {
+                prompt += " คำคมควรแสดงความยินดีอย่างสูงและกระตุ้นให้พัฒนาต่อไป";
+            } else if (percentage >= 50) {
+                prompt += " คำคมควรแสดงความยินดีในระดับปานกลางและกระตุ้นให้เรียนรู้ต่อไป";
+            } else {
+                prompt += " คำคมควรให้กำลังใจและเน้นย้ำถึงศักยภาพในการพัฒนา ไม่ควรทำให้รู้สึกแย่";
+            }
+
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`; // Use API_KEY
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                return "ไม่สามารถสร้างคำคมได้ในขณะนี้";
+            }
+        }
+
+        /**
+         * Implements a typewriter effect for displaying text.
+         * @param {string} text - The text to display character by character.
+         * @param {HTMLElement} element - The DOM element where the text will be displayed.
+         * @param {function} callback - A callback function to execute after typing is complete.
+         */
+        function typeWriter(text, element, callback) {
+            let i = 0;
+            element.textContent = '';
+            function type() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, typingSpeed);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        /**
+         * Hides all game sections and then shows the specified section.
+         * @param {string} sectionName - The name of the section to show ('dialogue', 'bossFight', 'question', 'defeatDialogue', 'result').
+         */
+        function showSection(sectionName) {
+            dialogueSection.classList.add('hidden');
+            gameArea.classList.add('hidden');
+            questionArea.classList.add('hidden');
+            resultArea.classList.add('hidden');
+            bossIntroTextElement.classList.add('hidden');
+            // qteOverlay.classList.add('hidden'); // Removed QTE overlay
+            darkOverlay.classList.add('hidden');
+
+            if (sectionName === 'dialogue') {
+                dialogueSection.classList.remove('hidden');
+                gameState = 'dialogue';
+            } else if (sectionName === 'bossFight') {
+                gameArea.classList.remove('hidden');
+                gameState = 'bossFight';
+            } else if (sectionName === 'question') {
+                questionArea.classList.remove('hidden');
+                gameState = 'question';
+            } else if (sectionName === 'defeatDialogue') {
+                dialogueSection.classList.remove('hidden');
+                gameState = 'defeatDialogue';
+            } else if (sectionName === 'result') {
+                resultArea.classList.remove('hidden');
+                gameState = 'result';
+            }
+        }
+
+        /**
+         * Displays the current dialogue line from the AI-generated dialogues array with a typewriter effect.
+         * Transitions to the boss fight when all dialogues are displayed.
+         */
+        function displayDialogue() {
+            if (currentDialogueIndex < dialogues.length) {
+                nextDialogueButton.disabled = true;
+                const currentLine = dialogues[currentDialogueIndex];
+                typeWriter(currentLine, dialogueText, () => {
+                    applyDramaticEffects(dialogueText, currentLine);
+                    nextDialogueButton.disabled = false;
+                });
+            } else {
+                dialogueText.textContent = "พลังอันยิ่งใหญ่กำลังใกล้เข้ามา...";
+                nextDialogueButton.disabled = true;
+
+                // Phase 1: Darken screen and intense shake
+                darkOverlay.classList.remove('hidden');
+                setTimeout(() => { darkOverlay.classList.add('active'); }, 10);
+                gameContainer.classList.add('shake-effect');
+                gameMessage.textContent = "พื้นดินสั่นสะเทือนอย่างรุน violently!";
+                gameMessage.classList.add('game-message-animated');
+
+                setTimeout(() => {
+                    gameContainer.classList.remove('shake-effect');
+                    dialogueSection.classList.add('hidden');
+                    gameMessage.classList.remove('game-message-animated');
+
+                    // Phase 2: Flash, then dramatic boss text
+                    const flashDiv = document.createElement('div');
+                    flashDiv.classList.add('flash-effect');
+                    document.body.appendChild(flashDiv);
+
+                    setTimeout(() => {
+                        flashDiv.remove();
+                    }, 150);
+
+                    setTimeout(() => {
+                        bossIntroTextElement.classList.remove('hidden');
+                        bossIntroTextElement.textContent = "อิกนอแรนซ์ โกเลม ปรากฏตัว!";
+                        bossIntroTextElement.style.animation = 'none';
+                        void bossIntroTextElement.offsetWidth;
+                        bossIntroTextElement.style.animation = 'bossTextAppear 2s forwards';
+
+                        setTimeout(() => {
+                            bossIntroTextElement.classList.add('hidden');
+                            
+                            // Phase 3: Transition to boss fight
+                            darkOverlay.classList.remove('active');
+                            setTimeout(() => { darkOverlay.classList.add('hidden'); }, 600);
+
+                            showSection('bossFight');
+                            gameMessage.textContent = "อิกนอแรนซ์ โกเลม กำลังคุกคาม! เตรียมตัวสำหรับการต่อสู้!";
+                            gameMessage.classList.add('game-message-animated');
+                            setTimeout(bossAttack, 1000);
+                        }, 2000);
+                    }, 200);
+                }, 1500);
+            }
+        }
+
+        /**
+         * Displays the defeat dialogue sequence.
+         * Transitions to the result screen after all defeat dialogues are shown.
+         */
+        function displayDefeatDialogue() {
+            if (currentDefeatDialogueIndex < defeatDialogues.length) {
+                nextDialogueButton.disabled = true;
+                const currentLine = defeatDialogues[currentDefeatDialogueIndex];
+                typeWriter(currentLine, dialogueText, () => {
+                    applyDramaticEffects(dialogueText, currentLine);
+                    nextDialogueButton.disabled = false;
+                });
+            } else {
+                displayResult(true);
+            }
+        }
+
+        /**
+         * Updates the visual representation of player and boss health bars.
+         * Also changes health bar color based on remaining health percentage.
+         */
+        function updateHealthBars() {
+            playerHealthBar.style.width = `${(playerHealth / maxHealth) * 100}%`;
+            bossHealthBar.style.width = `${(bossHealth / bossMaxHealth) * 100}%`;
+
+            // Player Health Bar Colors (Red when low, Orange when mid, Green when high)
+            if (playerHealth <= 25) {
+                playerHealthBar.style.backgroundImage = 'linear-gradient(to right, #ef4444, #dc2626)'; /* Red */
+            } else if (playerHealth <= 50) {
+                playerHealthBar.style.backgroundImage = 'linear-gradient(to right, #f59e0b, #d97706)'; /* Orange */
+            } else {
+                playerHealthBar.style.backgroundImage = 'linear-gradient(to right, #38a169, #2f855a)'; /* Green */
+            }
+
+            // Boss Health Bar Colors (Red when high, Orange when mid, Grey when low/critical)
+            if (bossHealth <= 25) {
+                bossHealthBar.style.backgroundImage = 'linear-gradient(to right, #6b7280, #4a5568)'; /* Grey/Critical */
+            } else if (bossHealth <= 50) {
+                bossHealthBar.style.backgroundImage = 'linear-gradient(to right, #f59e0b, #d97706)'; /* Orange/Warning */
+            } else {
+                bossHealthBar.style.backgroundImage = 'linear-gradient(to right, #e53e3e, #c53030)'; /* Strong Red (Full/High HP) */
+            }
+
+            // Add pulse animation
+            playerHealthBar.classList.add('pulse');
+            bossHealthBar.classList.add('pulse');
+            setTimeout(() => {
+                playerHealthBar.classList.remove('pulse');
+                bossHealthBar.classList.remove('pulse');
+            }, 300);
+        }
+
+        /**
+         * Applies damage to a target (player or boss).
+         * Triggers damage animation and checks for win/loss conditions.
+         * @param {string} target - 'player' or 'boss'.
+         * @param {number} amount - The amount of damage to apply.
+         */
+        function takeDamage(target, amount) {
+            if (target === 'player') {
+                playerHealth = Math.max(0, playerHealth - amount);
+                playerCharacter.classList.add('damage-animation');
+                showFloatingNumber(playerCharacter, amount, true);
+                setTimeout(() => playerCharacter.classList.remove('damage-animation'), 300);
+            } else if (target === 'boss') {
+                bossHealth = Math.max(0, bossHealth - amount);
+                bossCharacter.classList.add('damage-animation');
+                showFloatingNumber(bossCharacter, amount, true);
+                setTimeout(() => bossCharacter.classList.remove('damage-animation'), 300);
+            }
+            updateHealthBars();
+            checkWinLoss();
+        }
+
+        /**
+         * Simulates a boss attack.
+         * Displays a message, triggers boss attack animation, and then directly applies damage and proceeds to question.
+         */
+        function bossAttack() {
+            if (gameState !== 'bossFight') return;
+
+            gameMessage.textContent = "อิกนอแรนซ์ โกเลม กำลังโจมตี! คุณได้รับความเสียหาย!";
+            gameMessage.classList.add('game-message-animated');
+            setTimeout(() => {
+                gameMessage.classList.remove('game-message-animated');
+                bossCharacter.classList.add('attack-animation');
+                setTimeout(() => {
+                    bossCharacter.classList.remove('attack-animation');
+                    takeDamage('player', bossDamage); // Player takes damage automatically
+                    setTimeout(displayQuestion, 1500); // Proceed to question after damage
+                }, 600);
+            }, 400);
+        }
+
+        // Removed startQTE, handleQTE, and handleQTEClick functions as they are no longer needed.
+
+
+        /**
+         * Starts the countdown timer for a question.
+         */
+        function startQuestionTimer() {
+            clearInterval(timerInterval);
+            currentTimer = questionTimeLimit;
+            timerDisplay.textContent = `${currentTimer}`;
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('warning', 'critical');
+
+            timerInterval = setInterval(() => {
+                currentTimer--;
+                timerDisplay.textContent = `${currentTimer}`;
+                const percentage = (currentTimer / questionTimeLimit) * 100;
+                timerBar.style.width = `${percentage}%`;
+
+                if (percentage <= 25) {
+                    timerBar.classList.add('critical');
+                    timerBar.classList.remove('warning');
+                } else if (percentage <= 50) {
+                    timerBar.classList.add('warning');
+                    timerBar.classList.remove('critical');
+                } else {
+                    timerBar.classList.remove('warning', 'critical');
+                }
+
+                if (currentTimer <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.textContent = "หมดเวลา!";
+                    checkAnswer(-1);
+                }
+            }, 1000);
+        }
+
+        /**
+         * Displays the current question and its answer options.
+         * Transitions to the question area and starts the timer.
+         */
+        function displayQuestion() {
+            if (shuffledQuestions.length === 0) {
+                gameMessage.textContent = "ไม่มีคำถามให้แสดง! โปรดตรวจสอบไฟล์ questions.json";
+                gameMessage.classList.add('game-message-animated');
+                // You might want to halt the game or go to a specific error state here.
+                return;
+            }
+
+            if (currentQuestionIndex >= shuffledQuestions.length) {
+                if (bossHealth > 0) {
+                    gameMessage.textContent = "โกเลมไม่หยุดยั้ง! ไม่มีคำถามแล้ว มันโจมตี!";
+                    gameMessage.classList.add('game-message-animated');
+                    setTimeout(() => {
+                        gameMessage.classList.remove('game-message-animated');
+                        takeDamage('player', bossDamage * 2);
+                        if (playerHealth > 0) {
+                            setTimeout(bossAttack, 2000);
+                        }
+                    }, 400);
+                }
+                return;
+            }
+
+            const originalQuestion = shuffledQuestions[currentQuestionIndex];
+            const { shuffledAnswers, newCorrectIndex } = shuffleAnswers(originalQuestion);
+
+            questionText.textContent = originalQuestion.question;
+            questionText.classList.add('question-text-animated');
+            setTimeout(() => questionText.classList.remove('question-text-animated'), 500);
+
+            answerButtons.forEach((button, index) => {
+                button.textContent = shuffledAnswers[index];
+                button.classList.remove('correct', 'incorrect');
+                button.disabled = false;
+                button.dataset.correctIndex = newCorrectIndex;
+                button.dataset.originalIndex = index;
+            });
+            showSection('question');
+            startQuestionTimer();
+        }
+
+        /**
+         * Checks the selected answer against the correct answer.
+         * Applies damage based on correctness and updates game state.
+         * @param {number} selectedIndex - The index of the answer button clicked by the player, or -1 if time ran out.
+         */
+        function checkAnswer(selectedIndex) {
+            clearInterval(timerInterval);
+            const newCorrectIndex = parseInt(answerButtons[0].dataset.correctIndex);
+
+            const isCorrect = (selectedIndex === newCorrectIndex);
+
+            totalQuestionsAnswered++;
+
+            answerButtons.forEach((button, index) => {
+                button.disabled = true;
+                if (index === newCorrectIndex) {
+                    button.classList.add('correct');
+                } else if (index === selectedIndex && selectedIndex !== -1) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            if (selectedIndex === -1) {
+                incorrectAnswersCount++;
+                gameMessage.textContent = "หมดเวลา! โกเลมตอบโต้!";
+                bossCharacter.classList.add('attack-animation');
+                setTimeout(() => {
+                    bossCharacter.classList.remove('attack-animation');
+                    takeDamage('player', bossDamage);
+                    currentQuestionIndex++;
+                    if (playerHealth > 0) {
+                        setTimeout(bossAttack, 2000);
+                    }
+                }, 600);
+            } else if (isCorrect) {
+                correctAnswersCount++;
+                gameMessage.textContent = "ถูกต้อง! คุณโจมตีโกเลม!";
+                playerCharacter.classList.add('attack-animation');
+                setTimeout(() => {
+                    playerCharacter.classList.remove('attack-animation');
+                    takeDamage('boss', playerDamage);
+                    currentQuestionIndex++;
+                    if (bossHealth > 0) {
+                        setTimeout(bossAttack, 2000);
+                    }
+                }, 600);
+            } else {
+                incorrectAnswersCount++;
+                gameMessage.textContent = "ไม่ถูกต้อง! โกเลมตอบโต้!";
+                bossCharacter.classList.add('attack-animation');
+                setTimeout(() => {
+                    bossCharacter.classList.remove('attack-animation');
+                    takeDamage('player', bossDamage);
+                    currentQuestionIndex++;
+                    if (playerHealth > 0) {
+                        setTimeout(bossAttack, 2000);
+                    }
+                }, 600);
+            }
+            gameMessage.classList.add('game-message-animated');
+            setTimeout(() => {
+                gameMessage.classList.remove('game-message-animated');
+                showSection('bossFight');
+            }, 400);
+        }
+
+        /**
+         * Checks if either the player or the boss health has reached zero,
+         * determining if the game has ended and who won/lost.
+         */
+        async function checkWinLoss() {
+            if (playerHealth <= 0) {
+                gameMessage.textContent = "คุณพ่ายแพ้ต่ออิกนอแรนซ์ โกเลม!";
+                gameMessage.classList.add('game-message-animated');
+                setTimeout(() => {
+                    gameMessage.classList.remove('game-message-animated');
+                    displayResult(false);
+                }, 400);
+            } else if (bossHealth <= 0) {
+                gameMessage.textContent = "คุณเอาชนะอิกนอแรนซ์ โกเลมได้แล้ว! ความรู้คือชัยชนะ!";
+                gameMessage.classList.add('game-message-animated');
+                
+                nextDialogueButton.disabled = true;
+                loadingMessage.classList.remove('hidden');
+                try {
+                    defeatDialogues = await generateDefeatDialogueWithAI();
+                    loadingMessage.classList.add('hidden');
+                    currentDefeatDialogueIndex = 0;
+                    showSection('defeatDialogue');
+                    displayDefeatDialogue();
+                } catch (error) {
+                    console.error("Failed to generate defeat dialogue:", error);
+                    dialogueText.textContent = "เกิดข้อผิดพลาดในการสร้างบทสนทนาชัยชนะ...";
+                    loadingMessage.classList.add('hidden');
+                    displayResult(true);
+                }
+            }
+        }
+
+        /**
+         * Displays the final game result (win/loss message and score).
+         * Transitions to the result area.
+         * @param {boolean} playerWon - True if the player won, false otherwise.
+         */
+        async function displayResult(playerWon) {
+            if (playerWon) {
+                resultTitle.textContent = "ชัยชนะ!";
+                resultTitle.classList.add('text-success'); /* Bootstrap text-success */
+                resultTitle.classList.remove('text-danger'); /* Bootstrap text-danger */
+            } else {
+                resultTitle.textContent = "พ่ายแพ้!";
+                resultTitle.classList.add('text-danger'); /* Bootstrap text-danger */
+                resultTitle.classList.remove('text-success'); /* Bootstrap text-success */
+            }
+            resultTitle.classList.add('result-title-animated');
+
+            let correctPercentage = 0;
+            if (totalQuestionsAnswered > 0) {
+                correctPercentage = Math.round((correctAnswersCount / totalQuestionsAnswered) * 100);
+            }
+
+            resultStats.textContent = `ตอบคำถามทั้งหมด: ${totalQuestionsAnswered} ข้อ | ถูกต้อง: ${correctAnswersCount} ข้อ | ผิด: ${incorrectAnswersCount} ข้อ`;
+            resultStats.classList.add('result-text-animated');
+
+            resultQuote.textContent = "กำลังสร้างคำคม...";
+            resultQuote.classList.add('result-text-animated');
+            try {
+                const generatedQuote = await generateQuoteWithAI(correctPercentage, playerWon);
+                resultQuote.textContent = `${correctPercentage}% - ${generatedQuote}`;
+            } catch (error) {
+                console.error("Failed to generate quote:", error);
+                resultQuote.textContent = `${correctPercentage}% - ไม่สามารถสร้างคำคมได้ในขณะนี้`;
+            }
+            
+            // --- Save game data to localStorage ---
+            const currentScore = Math.round((correctAnswersCount / totalQuestionsAnswered) * 100); // Example score calculation
+
+            let gameResults = JSON.parse(localStorage.getItem('game_results') || '[]');
+            let existingSubjectData = gameResults.find(item => item.subjectName === subjectId);
+
+            if (existingSubjectData) {
+                existingSubjectData.quizCount = (existingSubjectData.quizCount || 0) + 1;
+                existingSubjectData.totalScore = (existingSubjectData.totalScore || 0) + currentScore;
+            } else {
+                gameResults.push({
+                    subjectName: subjectId,
+                    quizCount: 1,
+                    totalScore: currentScore
+                });
+            }
+            localStorage.setItem('game_results', JSON.stringify(gameResults));
+            console.log("Game results saved:", gameResults); // For debugging
+
+            showSection('result');
+            setTimeout(() => {
+                resultTitle.classList.remove('result-title-animated');
+                resultStats.classList.remove('result-text-animated');
+                resultQuote.classList.remove('result-text-animated');
+            }, 1000);
+        }
+
+        // --- Event Listeners ---
+        nextDialogueButton.addEventListener('click', () => {
+            if (gameState === 'dialogue') {
+                currentDialogueIndex++;
+                displayDialogue();
+            } else if (gameState === 'defeatDialogue') {
+                currentDefeatDialogueIndex++;
+                displayDefeatDialogue();
+            }
+        });
+
+        answerButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const clickedButtonIndex = Array.from(answerButtons).indexOf(event.target);
+                checkAnswer(clickedButtonIndex);
+            });
+        });
+
+        playAgainButton.addEventListener('click', startGame);
+
+        // --- Initialize Game on Load ---
+        window.onload = startGame;
+
+    </script>
+{% endblock %}

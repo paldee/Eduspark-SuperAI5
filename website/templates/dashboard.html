@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block cssContent %}
+<style>
+    /* Ensure body background is dark for seamless transition */
+    body {
+        background-color: #0f0f1a; /* Dark background for the entire page */
+    }
+
+    /* Main dashboard container with cool background */
+    .dashboard-container {
+        background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); /* Deep dark gradient */
+        min-height: calc(100vh - var(--navbar-height, 56px)); /* Ensure it takes full height minus navbar */
+        padding: 3rem 1rem; /* Adjust padding for overall layout */
+        border-radius: 1rem; /* Match card border radius */
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5); /* Inner shadow for depth */
+        color: #e0e0e0; /* Default text color for the container */
+    }
+
+    /* Welcome section styling */
+    .welcome-section {
+        background-color: #2a2a3d;
+        border-radius: 1rem;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+
+    .welcome-section h1 {
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 0.75rem;
+    }
+
+    .welcome-section p {
+        font-size: 1.1rem;
+        color: #b0b0b0;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Key metrics cards */
+    .metric-card {
+        background-color: #2a2a3d;
+        color: #e0e0e0;
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        padding: 1.5rem;
+        display: flex; /* Make card a flex container */
+        flex-direction: column; /* Stack children vertically */
+        justify-content: space-between; /* Distribute space between top and bottom content */
+        min-height: 180px; /* Ensure consistent height for cards */
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .metric-card .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #ffc107; /* Accent color for icons */
+    }
+
+    .metric-card .card-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1;
+        margin-bottom: 0.5rem; /* Default margin for value */
+    }
+
+    .metric-card .card-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #b0b0b0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-card .card-subtext {
+        font-size: 0.85rem;
+        color: #808080;
+        margin-top: 0; /* Remove default margin-top for subtext */
+    }
+
+    /* Progress bar styling within metric card */
+    .metric-card .progress {
+        height: 0.8rem; /* Thinner progress bar */
+        background-color: #4a4a6e;
+        border-radius: 0.4rem;
+        margin-top: 0.75rem; /* Adjusted margin-top for progress bar */
+    }
+
+    .metric-card .progress-bar {
+        background-color: #28a745; /* Success green */
+        border-radius: 0.4rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 5px; /* Padding for text inside bar */
+    }
+
+    /* New card styles for Learned Topics and Suggested Interests */
+    .info-card {
+        background-color: #2a2a3d;
+        color: #e0e0e0;
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        padding: 1.5rem;
+        height: 100%; /* Ensure cards in the same row have equal height */
+    }
+
+    .info-card .card-header-custom {
+        background-color: #007bff; /* Primary blue header */
+        color: #ffffff;
+        font-size: 1.3rem;
+        font-weight: 700;
+        border-radius: 0.75rem; /* Rounded corners for header */
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: inline-block; /* Make it fit content and allow margin */
+    }
+
+    .learned-topic-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        color: #e0e0e0;
+    }
+
+    .learned-topic-item .bi {
+        font-size: 1.1rem;
+        margin-right: 0.75rem;
+        color: #17a2b8; /* Info blue for checkmarks */
+    }
+
+    .interest-item {
+        background-color: #34344a;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        text-decoration: none; /* Remove underline from link */
+        display: block; /* Make the whole div clickable */
+        color: #e0e0e0; /* Default text color */
+    }
+
+    .interest-item:hover {
+        background-color: #3f3f5a;
+        transform: translateY(-2px);
+    }
+
+    .interest-item .interest-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #ffffff;
+        margin-bottom: 0.25rem;
+    }
+
+    .interest-item .interest-category {
+        font-size: 0.85rem;
+        color: #aaaaaa;
+    }
+
+    /* Styles for the new chart-like cards */
+    .chart-card-item {
+        margin-bottom: 0.75rem;
+    }
+    .chart-card-label {
+        font-size: 0.95rem;
+        color: #b0b0b0;
+        margin-bottom: 0.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .chart-card-label span:first-child {
+        font-weight: 500;
+        color: #e0e0e0;
+    }
+    .chart-card-label span:last-child {
+        font-weight: 600;
+        color: #ffc107; /* Accent color for percentages */
+    }
+    .chart-card-progress {
+        height: 0.6rem; /* Thinner progress bar for charts */
+        background-color: #4a4a6e;
+        border-radius: 0.3rem;
+    }
+    .chart-card-progress .progress-bar {
+        background-color: #17a2b8; /* Info blue for learned topics */
+        border-radius: 0.3rem;
+    }
+    .chart-card-progress.interest .progress-bar {
+        background-color: #28a745; /* Success green for interest level */
+    }
+
+    /* Specific styling for quiz results display */
+    .quiz-result-item {
+        background-color: #34344a;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .quiz-result-item .subject-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #ffffff;
+    }
+
+    .quiz-result-item .quiz-stats {
+        font-size: 0.9rem;
+        color: #b0b0b0;
+    }
+
+    .quiz-result-item .quiz-score {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #ffc107; /* Accent color for score */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 767.98px) {
+        .welcome-section {
+            padding: 1.5rem;
+        }
+        .welcome-section h1 {
+            font-size: 2.2rem;
+        }
+        .metric-card {
+            min-height: auto; /* Allow height to adjust on small screens */
+        }
+        .metric-card .card-value {
+            font-size: 2.5rem;
+        }
+        .info-card {
+            padding: 1rem;
+        }
+        .info-card .card-header-custom {
+            font-size: 1.1rem;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+        }
+        .learned-topic-item, .interest-item {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+        }
+        .interest-item .interest-title {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container dashboard-container">
+    <div class="welcome-section">
+        <h1>Welcome Back, Learner!</h1>
+        <p>Your personalized hub for AI-powered learning and creativity. Dive into your progress, upcoming tasks, and recent activities.</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card metric-card">
+                <div class="text-start">
+                    <i class="bi bi-graph-up-arrow card-icon"></i>
+                    <p class="card-label">Overall Average Score</p>
+                </div>
+                <div class="text-end">
+                    <p class="card-value" id="overallAverageScore">--%</p>
+                    <p class="card-subtext">Across all quizzes</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card metric-card">
+                <div class="text-start">
+                    <i class="bi bi-question-circle card-icon"></i>
+                    <p class="card-label">Total Quizzes Taken</p>
+                </div>
+                <div class="text-end">
+                    <p class="card-value" id="totalQuizzesTaken">0</p>
+                    <p class="card-subtext">Since you started</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card metric-card">
+                <div class="text-start">
+                    <i class="bi bi-journal-bookmark card-icon"></i>
+                    <p class="card-label">Subjects Covered</p>
+                </div>
+                <div class="text-end">
+                    <p class="card-value" id="subjectsCovered">0</p>
+                    <p class="card-subtext">Unique quiz subjects</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card metric-card">
+                <div class="text-start">
+                    <i class="bi bi-trophy card-icon"></i>
+                    <p class="card-label">Highest Score Achieved</p>
+                </div>
+                <div class="text-end">
+                    <p class="card-value" id="highestScoreAchieved">--</p>
+                    <p class="card-subtext">In a single quiz</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="card info-card">
+                <div class="card-header-custom">
+                    <i class="bi bi-award-fill me-2"></i> Quiz Performance Breakdown
+                </div>
+                <div class="card-body p-0" id="quizPerformanceBreakdown">
+                    <p class="text-muted mb-4 p-3">No detailed quiz data available yet. Play a game to see your performance!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card info-card">
+                <div class="card-header-custom">
+                    <i class="bi bi-lightbulb me-2"></i> Personalized Recommendations
+                </div>
+                <div class="card-body p-0" id="recommendationsSection">
+                    <p class="text-muted mb-4 p-3">Based on your quiz performance, we'll suggest areas for improvement here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to load and display game results from localStorage
+        function loadGameResults() {
+            const overallAverageScoreEl = document.getElementById('overallAverageScore');
+            const totalQuizzesTakenEl = document.getElementById('totalQuizzesTaken');
+            const subjectsCoveredEl = document.getElementById('subjectsCovered');
+            const highestScoreAchievedEl = document.getElementById('highestScoreAchieved');
+            const quizPerformanceBreakdownEl = document.getElementById('quizPerformanceBreakdown');
+            const recommendationsSectionEl = document.getElementById('recommendationsSection');
+
+            let gameResults = [];
+
+            try {
+                const storedResults = localStorage.getItem('game_results');
+                if (storedResults) {
+                    gameResults = JSON.parse(storedResults);
+                }
+            } catch (e) {
+                console.error("Error parsing game results from localStorage:", e);
+                // Clear corrupted data or handle gracefully
+                localStorage.removeItem('game_results');
+                gameResults = [];
+            }
+
+            // Clear existing content in dynamic sections
+            quizPerformanceBreakdownEl.innerHTML = '';
+            recommendationsSectionEl.innerHTML = '';
+
+            if (gameResults.length > 0) {
+                let totalQuizzes = 0;
+                let totalScoreSum = 0;
+                let highestSingleScore = 0;
+                const subjectPerformanceMap = new Map(); // To store aggregated data per subject
+
+                gameResults.forEach(result => {
+                    const subjectName = result.subjectName || 'Unknown Subject';
+                    const quizCount = result.quizCount || 0;
+                    const totalScore = result.totalScore || 0;
+
+                    totalQuizzes += quizCount;
+                    totalScoreSum += totalScore;
+                    highestSingleScore = Math.max(highestSingleScore, totalScore);
+
+                    // Aggregate data per subject
+                    if (!subjectPerformanceMap.has(subjectName)) {
+                        subjectPerformanceMap.set(subjectName, {
+                            totalScore: 0,
+                            quizCount: 0,
+                            highestScore: 0
+                        });
+                    }
+                    const subjectData = subjectPerformanceMap.get(subjectName);
+                    subjectData.totalScore += totalScore;
+                    subjectData.quizCount += quizCount;
+                    subjectData.highestScore = Math.max(subjectData.highestScore, totalScore);
+                });
+
+                const overallAverageScore = totalQuizzes > 0 ? (totalScoreSum / totalQuizzes).toFixed(1) : 0;
+                const uniqueSubjectsCount = subjectPerformanceMap.size;
+
+                // Populate Key Metrics
+                overallAverageScoreEl.textContent = `${overallAverageScore}%`;
+                totalQuizzesTakenEl.textContent = totalQuizzes;
+                subjectsCoveredEl.textContent = uniqueSubjectsCount;
+                highestScoreAchievedEl.textContent = highestSingleScore;
+
+                // Populate Quiz Performance Breakdown
+                if (uniqueSubjectsCount > 0) {
+                    subjectPerformanceMap.forEach((data, subjectName) => {
+                        const averageScore = data.quizCount > 0 ? (data.totalScore / data.quizCount).toFixed(1) : 0;
+                        const percentage = parseFloat(averageScore);
+
+                        const chartItem = document.createElement('div');
+                        chartItem.classList.add('chart-card-item');
+                        chartItem.innerHTML = `
+                            <div class="chart-card-label">
+                                <span>${subjectName}</span>
+                                <span>${percentage}%</span>
+                            </div>
+                            <div class="progress chart-card-progress">
+                                <div class="progress-bar" role="progressbar" style="width: ${percentage}%;" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Quizzes: ${data.quizCount}, Highest: ${data.highestScore}</small>
+                        `;
+                        quizPerformanceBreakdownEl.appendChild(chartItem);
+                    });
+                } else {
+                    quizPerformanceBreakdownEl.innerHTML = '<p class="text-muted mb-4 p-3">No detailed quiz data available yet. Play a game to see your performance!</p>';
+                }
+
+
+                // Populate Personalized Recommendations
+                const weakestSubjects = Array.from(subjectPerformanceMap.entries())
+                    .map(([subjectName, data]) => ({
+                        subjectName,
+                        averageScore: data.quizCount > 0 ? (data.totalScore / data.quizCount) : 0
+                    }))
+                    .filter(item => item.averageScore < 70 && item.averageScore > 0) // Recommend subjects with average score < 70%
+                    .sort((a, b) => a.averageScore - b.averageScore); // Sort by lowest average score first
+
+                if (weakestSubjects.length > 0) {
+                    const recommendationList = document.createElement('ul');
+                    recommendationList.classList.add('list-unstyled', 'mb-0', 'p-3');
+                    weakestSubjects.forEach(subject => {
+                        const listItem = document.createElement('li');
+                        listItem.classList.add('mb-2');
+                        listItem.innerHTML = `<i class="bi bi-arrow-right-circle-fill me-2 text-info"></i> Review <strong>${subject.subjectName}</strong> (Average: ${subject.averageScore.toFixed(1)}%)`;
+                        recommendationList.appendChild(listItem);
+                    });
+                    recommendationsSectionEl.appendChild(recommendationList);
+                    const encouragement = document.createElement('p');
+                    encouragement.classList.add('text-muted', 'mt-3', 'p-3');
+                    encouragement.innerHTML = 'Focus on these areas to boost your overall understanding!';
+                    recommendationsSectionEl.appendChild(encouragement);
+
+                } else {
+                    recommendationsSectionEl.innerHTML = '<p class="text-muted mb-4 p-3">Great job! Your performance is strong across the board. Keep exploring new topics!</p>';
+                }
+
+            } else {
+                // Display initial messages if no game results exist
+                overallAverageScoreEl.textContent = '--%';
+                totalQuizzesTakenEl.textContent = '0';
+                subjectsCoveredEl.textContent = '0';
+                highestScoreAchievedEl.textContent = '--';
+                quizPerformanceBreakdownEl.innerHTML = '<p class="text-muted mb-4 p-3">No detailed quiz data available yet. Play a game to see your performance!</p>';
+                recommendationsSectionEl.innerHTML = '<p class="text-muted mb-4 p-3">Based on your quiz performance, we\'ll suggest areas for improvement here.</p>';
+            }
+        }
+
+        // Call the function to load results when the page loads
+        loadGameResults();
+    });
+</script>
+{% endblock %}

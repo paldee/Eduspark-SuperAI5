@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% block title %}Watch Video - {{ video_title }}{% endblock %}
+
+{% block cssContent %}
+<style>
+    /* Base styles (keep as is) */
+    body {
+        background-color: #0f0f1a;
+    }
+
+    /* Video player and details (keep as is, review for consistency) */
+    .video-player-container {
+        position: relative;
+        width: 100%;
+        padding-bottom: 56.25%;
+        background-color: #000;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .video-player-container iframe,
+    .video-player-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .video-details-card, .summary-card {
+        background-color: #1e1e2d; /* Slightly lighter dark for modern feel */
+        color: #e0e0e0;
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .video-details-card .video-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+    }
+
+    .video-details-card .channel-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        color: #b0b0b0;
+        font-size: 0.95rem;
+    }
+
+    .video-details-card .channel-info .channel-name {
+        font-weight: 600;
+        color: #8c7ae6; /* A more modern purple accent */
+    }
+
+    .video-details-card .video-meta {
+        font-size: 0.9rem;
+        color: #aaaaaa;
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .video-details-card .video-description-header {
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .scrollable-description {
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 10px;
+        font-size: 0.95rem;
+        color: #b0b0b0;
+        line-height: 1.6;
+    }
+
+    .scrollable-description::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .scrollable-description::-webkit-scrollbar-thumb {
+        background-color: #555;
+        border-radius: 4px;
+    }
+
+    .scrollable-description::-webkit-scrollbar-track {
+        background-color: #333;
+        border-radius: 4px;
+    }
+
+    .description-buttons {
+        margin-top: auto;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .description-buttons .btn {
+        flex-grow: 1;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .description-buttons .btn-primary {
+        background-color: #8c7ae6; /* Modern primary button */
+        border-color: #8c7ae6;
+        color: #fff;
+    }
+
+    .description-buttons .btn-primary:hover {
+        background-color: #6d5bbf;
+        border-color: #6d5bbf;
+    }
+
+    .description-buttons .btn-secondary {
+        background-color: #6a748c; /* Slightly muted secondary */
+        border-color: #6a748c;
+        color: #fff;
+    }
+
+    .description-buttons .btn-secondary:hover {
+        background-color: #555c6d;
+        border-color: #555c6d;
+    }
+
+    .summary-card .summary-header {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #8c7ae6; /* Consistent accent color */
+        margin-bottom: 1rem;
+    }
+
+    .summary-card textarea {
+        background-color: #2b2b40; /* Slightly lighter dark for inputs */
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        resize: none;
+        overflow-y: auto;
+    }
+
+    .summary-card textarea[readonly] {
+        color: #ffffff;
+        opacity: 1;
+    }
+
+    .summary-card textarea::placeholder {
+        color: #cccccc;
+        opacity: 1;
+    }
+    .summary-card textarea::-webkit-input-placeholder {
+        color: #cccccc;
+    }
+    .summary-card textarea:-ms-input-placeholder {
+        color: #cccccc;
+    }
+
+    .summary-card textarea:focus {
+        background-color: #3d3d57; /* Slightly lighter on focus */
+        border-color: #8c7ae6; /* Focus color matches accent */
+        box-shadow: 0 0 0 0.25rem rgba(140, 122, 230, 0.25);
+        color: #ffffff;
+        outline: none;
+    }
+
+    @media (max-width: 991.98px) {
+        .video-details-card {
+            margin-top: 1.5rem;
+        }
+        .summary-card {
+            margin-top: 1.5rem;
+        }
+    }
+    @media (min-width: 992px) {
+        .summary-card-desktop-placement {
+            margin-top: 1.5rem;
+        }
+    }
+
+    /* --- NEW/MODIFIED: Chatbot Popup Styles for Modern Look --- */
+    .chatbot-popup {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        height: 480px; /* Slightly taller for more messages */
+        background-color: #1e1e2d; /* Consistent card background */
+        border-radius: 1.25rem; /* More rounded corners */
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7); /* Stronger, diffused shadow */
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        /* Initial state: off-screen and invisible */
+        transform: translate3d(50px, 50px, 0) scale(0.8); /* Moves, scales, and ensures hardware acceleration */
+        opacity: 0;
+        /* Cool-down transition (longer, smoother) */
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        pointer-events: none; /* Allows clicks through when hidden */
+    }
+
+    .chatbot-popup.show {
+        transform: translate3d(0, 0, 0) scale(1); /* Moves to original position, scales to 100% */
+        opacity: 1;
+        pointer-events: auto; /* Enables clicks when visible */
+    }
+
+    .chatbot-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 1.2rem;
+        background-color: #2b2b40; /* Slightly darker header */
+        color: #8c7ae6; /* Accent color for header */
+        border-top-left-radius: 1.25rem;
+        border-top-right-radius: 1.25rem;
+        font-weight: 700; /* Bolder header text */
+        font-size: 1.2rem; /* Larger header font */
+        flex-shrink: 0; /* Prevent header from shrinking */
+    }
+
+    .chatbot-close-btn {
+        background: none;
+        border: none;
+        color: #b0b0b0; /* Softer close button color */
+        font-size: 1.8rem; /* Larger 'x' */
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        transition: color 0.2s ease-in-out;
+    }
+
+    .chatbot-close-btn:hover {
+        color: #ffffff;
+        transform: rotate(90deg); /* Little spin effect */
+    }
+
+    .chat-messages {
+        flex-grow: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem; /* Slightly more space between messages */
+        color: #e0e0e0;
+        font-size: 0.95rem; /* Consistent message font size */
+        line-height: 1.5;
+    }
+
+    /* Scrollbar styles for messages (modernized) */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #4a4a60; /* Darker thumb */
+        border-radius: 4px;
+    }
+    .chat-messages::-webkit-scrollbar-track {
+        background-color: #2b2b40; /* Darker track */
+    }
+
+    .chat-message {
+        padding: 0.8rem 1.1rem; /* Slightly more padding */
+        border-radius: 1.2rem; /* More rounded bubbles */
+        max-width: 85%; /* Slightly wider max width */
+        word-wrap: break-word;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow on bubbles */
+    }
+
+    .chat-message.user {
+        background-color: #8c7ae6; /* User bubble matches primary accent */
+        align-self: flex-end;
+        color: #fff;
+    }
+
+    .chat-message.ai {
+        background-color: #2b2b40; /* AI bubble matches input/header background */
+        align-self: flex-start;
+        color: #e0e0e0;
+    }
+
+    .chat-input-container {
+        display: flex;
+        padding: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 10px;
+        flex-shrink: 0; /* Prevent input from shrinking */
+    }
+
+    .chat-input {
+        flex-grow: 1;
+        background-color: #2b2b40; /* Consistent input background */
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 0.75rem; /* More rounded input */
+        padding: 0.75rem 1rem;
+        color: #ffffff;
+        outline: none;
+        resize: none;
+        min-height: 45px; /* Slightly taller input */
+        font-size: 1rem; /* Better readability */
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .chat-input:focus {
+        border-color: #8c7ae6; /* Focus border matches accent */
+        box-shadow: 0 0 0 0.15rem rgba(140, 122, 230, 0.2);
+    }
+
+    .chat-input::placeholder {
+        color: #b0b0b0; /* Softer placeholder */
+    }
+
+    .chat-send-btn {
+        background-color: #8c7ae6; /* Send button matches primary accent */
+        border: none;
+        color: #fff;
+        border-radius: 0.75rem; /* More rounded button */
+        padding: 0.75rem 1.2rem;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    }
+
+    .chat-send-btn:hover {
+        background-color: #6d5bbf;
+        transform: translateY(-2px); /* Slight lift on hover */
+    }
+    .chat-send-btn:active {
+        transform: translateY(0); /* Press down effect */
+    }
+
+    .typing-indicator {
+        font-style: italic;
+        color: #b0b0b0;
+        padding: 0.5rem 1rem;
+        align-self: flex-start;
+        animation: pulse 1.5s infinite ease-in-out; /* Pulsing effect */
+    }
+
+    /* Keyframes for typing indicator */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Responsive adjustments for chatbot */
+    @media (max-width: 767.98px) {
+        .chatbot-popup {
+            width: 90%;
+            height: 75%; /* Taller on mobile */
+            bottom: 15px;
+            right: 5%;
+            left: 5%;
+            border-radius: 1.5rem; /* Even more rounded on mobile */
+        }
+        .chatbot-header {
+            font-size: 1.1rem;
+            padding: 0.7rem 1rem;
+        }
+        .chatbot-close-btn {
+            font-size: 1.6rem;
+        }
+        .chat-input-container {
+            padding: 0.8rem;
+        }
+        .chat-input, .chat-send-btn {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-8 order-lg-1">
+            <div class="video-player-container">
+                <video controls poster="{{ url_for('static', filename='Thumbnails/'+ 'Thumbnail_' + video_title_id + '.png') }}" style="width: 100%; height: 100%;">
+                    <source src="{{ url_for('static', filename='VideoDump/' + video_title_id + '.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+
+        <div class="col-lg-4 order-lg-2">
+            <div class="video-details-card h-100">
+                <h1 class="video-title">{{ video_title }}</h1>
+
+                <div class="channel-info">
+                    <div>
+                        <p class="channel-name mb-0">{{ channel_name }}</p>
+                        <p class="video-meta mb-0">{{ views }} views • {{ upload_date }}</p>
+                    </div>
+                </div>
+
+                <hr class="border-secondary my-3">
+
+                <p class="video-description-header">Description:</p>
+                <div class="video-description scrollable-description">
+                    <p>{{ description }}</p>
+                </div>
+
+                <div class="description-buttons">
+                    <button id="askAiButton" class="btn btn-primary">Ask AI</button>
+                    <a href="/watch/{{ id }}/game" class="btn btn-secondary">Start Quizzes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 order-lg-3 summary-card-desktop-placement">
+            <div class="summary-card h-100">
+                <h2 class="summary-header">Video Summary</h2>
+                <textarea id="videoSummaryTextarea" class="form-control" placeholder="Summary will be loaded here..." rows="5" readonly>{{ summary }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="chatbot-popup" class="chatbot-popup">
+    <div class="chatbot-header">
+        <span>AI Chat</span>
+        <button class="chatbot-close-btn" id="chatbotCloseBtn">&times;</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+        <div class="chat-message ai">Hello! I'm here to help you understand this video. What would you like to ask?</div>
+    </div>
+    <div class="chat-input-container">
+        <textarea id="chatInput" class="chat-input" placeholder="Type your message..."></textarea>
+        <button id="chatSendBtn" class="chat-send-btn">Send</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const summaryTextarea = document.getElementById('videoSummaryTextarea');
+
+        function autoResizeTextarea() {
+            summaryTextarea.style.height = 'auto';
+            summaryTextarea.style.height = summaryTextarea.scrollHeight + 2 + 'px';
+        }
+        autoResizeTextarea();
+
+        const askAiButton = document.getElementById('askAiButton');
+        const chatbotPopup = document.getElementById('chatbot-popup');
+        const chatbotCloseBtn = document.getElementById('chatbotCloseBtn');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+        // Removed: const languageSelect = document.getElementById('languageSelect');
+
+        let chatHistory = []; // This will store the conversation history
+        // Removed: let currentLanguage = languageSelect.value;
+
+        // Removed: Update currentLanguage when selection changes
+        // Removed: languageSelect.addEventListener('change', function() {
+        // Removed:     currentLanguage = this.value;
+        // Removed:     initializeChatHistory(); // Re-initialize chat history with new language context
+        // Removed: });
+
+        // --- Initialize chat history with the video summary as the core context ---
+        function initializeChatHistory() {
+            const rawSummaryJsonString = `{{ summary | tojson }}`;
+            const videoSummaryContent = rawSummaryJsonString.slice(1, -1); // Remove outer quotes
+
+            // This first "user" message sets the context and persona for the AI
+            chatHistory = [
+                {
+                    role: "user",
+                    parts: [{ text: `You are an expert tutor specializing in the content of the following video summary. Your goal is to help the user understand the video's concepts thoroughly and efficiently.
+                        Detect the user's language and respond in that language.
+
+                        **Instructions:**
+                        1.  **Analyze the User's Question:** Determine if the question is directly related to the video summary or a logical extension/clarification of its content.
+                        2.  **Provide Concise, Clear Answers:** Respond directly and accurately based *only* on the video summary provided.
+                        3.  **Handle Related Inquiries:** If the user's question delves into a concept mentioned or implied by the summary, even if not explicitly detailed, provide a concise explanation **relevant to the video's context**. Do not introduce outside information unless explicitly asked to elaborate on a foundational concept directly tied to the video's subject.
+                        4.  **Politely Redirect Irrelevant Questions:** If a question is entirely outside the scope of the video content, politely state that you can only provide information related to the video.
+                        5.  **Maintain a Helpful Tone:** Be encouraging and supportive.
+
+                        **Video Summary:**
+                        ${videoSummaryContent}
+
+                        From now on, the following messages will be the user's direct questions about the video content.` }]
+                },
+                {
+                    role: "model",
+                    parts: [{ text: "Hello! I'm here to help you understand this video. What would you like to ask?" }]
+                }
+            ];
+
+            // Display the initial AI greeting
+            // Clear previous messages if re-initializing on popup open
+            chatMessages.innerHTML = '';
+            addMessage('ai', "Hello! I'm here to help you understand this video. What would you like to ask?");
+        }
+
+        // --- Event Listeners ---
+        askAiButton.addEventListener('click', function() {
+            chatbotPopup.classList.add('show');
+            initializeChatHistory(); // Re-initialize history every time popup is opened
+            setTimeout(() => chatInput.focus(), 400); // Wait for transition
+        });
+
+        chatbotCloseBtn.addEventListener('click', function() {
+            chatbotPopup.classList.remove('show');
+        });
+
+        chatSendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // --- Chat Functions ---
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender);
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            addMessage('user', userMessage);
+            chatInput.value = '';
+
+            // Add user message to the chat history
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing-indicator');
+            typingIndicator.textContent = 'AI is typing...';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const payload = {
+                    // Send the entire chat history as contents for context
+                    contents: chatHistory
+                };
+
+                const apiKey = "AIzaSyAlIzDDOercv2Zpl_Eo0j-4j1Orb1pqWF0"; // Leave this as-is for Canvas environment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (chatMessages.contains(typingIndicator)) {
+                    chatMessages.removeChild(typingIndicator);
+                }
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+                    addMessage('ai', aiResponseText);
+                    // Add AI response to the chat history
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+                } else {
+                    addMessage('ai', 'Sorry, I could not generate a response. Please try again or rephrase your question.');
+                    console.error('AI response structure unexpected or empty:', result);
+                }
+            } catch (error) {
+                if (chatMessages.contains(typingIndicator)) {
+                    chatMessages.removeChild(typingIndicator);
+                }
+                addMessage('ai', 'An error occurred while connecting to the AI. Please check your network connection.');
+                console.error('Error fetching AI response:', error);
+            }
+        }
+    });
+</script>
+{% endblock %}

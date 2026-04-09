@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+PyMySQL
+selenium
+moviepy
+webvtt-py
+requests
+beautifulsoup4
+pandas
+yt-dlp
+assemblyai

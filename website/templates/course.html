@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Courses{% endblock %}
+{% block cssContent %}
+<style>
+    /* Custom styles for video cards for a cleaner look */
+    .video-card {
+        background-color: #212121; /* Dark background for cards */
+        border-radius: 12px;
+        overflow: hidden; /* Ensures rounded corners apply to image */
+        margin-bottom: 24px; /* Space between cards */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        color: #e0e0e0; /* Light text color for cards */
+        cursor: pointer; /* Indicate that the card is clickable */
+        display: block; /* Ensure the entire card is a block-level link */
+        text-decoration: none; /* Remove underline from link */
+    }
+
+    .video-card:hover {
+        transform: translateY(-5px); /* Slight lift on hover */
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* More pronounced shadow on hover */
+    }
+
+    .video-card img {
+        width: 100%;
+        height: 200px; /* Fixed height for thumbnails */
+        object-fit: cover; /* Ensures images cover the area without distortion */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Separator below image */
+    }
+
+    .video-info {
+        padding: 15px;
+    }
+
+    .video-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Limit title to 2 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: #ffffff; /* White color for titles */
+    }
+
+    .channel-name, .video-meta {
+        font-size: 0.9rem;
+        color: #aaaaaa; /* Lighter gray for meta info */
+        margin-bottom: 4px;
+    }
+
+    .channel-name {
+        font-weight: 500;
+    }
+
+    /* Adjust padding for the main content area */
+    .main-content-area { /* Renamed from .container-fluid for clarity */
+        padding-top: 30px;
+        padding-bottom: 30px;
+        background-color: #0f0f1a; /* Ensure the background color matches the body */
+        min-height: 100%; /* Ensures this div takes up at least 100% of its parent's height */
+    }
+
+    /* Responsive adjustments for columns */
+    @media (min-width: 768px) {
+        .col-md-4 {
+            flex: 0 0 auto;
+            width: 33.333333%;
+        }
+    }
+    @media (min-width: 992px) {
+        .col-lg-3 {
+            flex: 0 0 auto;
+            width: 25%;
+        }
+    }
+    @media (min-width: 1200px) {
+        .col-xl-2 {
+            flex: 0 0 auto;
+            width: 16.666667%; /* 6 columns on extra large screens */
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="flex-grow-1">
+    <div class="container-fluid main-content-area text-white">
+        <h2 class="mb-4 ps-3">Recommended for You</h2>
+        <div class="row">
+        {% for x in videos %}
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+                <a href="{{ x.video_url }}" class="video-card"> {# Changed this line! #}
+                    <img src="{{ url_for('static', filename='Thumbnails/'+ 'Thumbnail_' + x.title_id + '.png') }}" alt="Video Thumbnail"> {# Use dynamic thumbnail URL #}
+                    <div class="video-info">
+                        <h3 class="video-title">{{ x.title }}</h3> {# Use x.title instead of x["title"] for consistency #}
+                        <p class="channel-name">{{ x.channel_name }}</p> {# Use x.channel_name #}
+                        <p class="video-meta"> {{ x.views }} views &bull; {{ x.upload_date }} </p> {# Use x.views, x.upload_date #}
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock %}

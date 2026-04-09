@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}Upload Video{% endblock %}
+
+{% block cssContent %}
+<style>
+    body {
+        background-color: #0f0f1a; /* Ensure body background is dark for consistency */
+    }
+
+    .upload-card {
+        background-color: #2a2a3d; /* Darker background for the card */
+        color: #e0e0e0; /* Light text color */
+        border: none;
+        border-radius: 1.5rem; /* More rounded corners for a softer look */
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5); /* Deeper shadow for a floating effect */
+        padding: 2rem; /* More internal padding */
+    }
+
+    .upload-card .card-title {
+        color: #ffc107; /* Highlight title with warning color */
+        font-size: 2rem; /* Larger title */
+        font-weight: 700;
+        margin-bottom: 2rem; /* More space below title */
+    }
+
+    .form-label {
+        color: #b0b0b0; /* Lighter color for labels */
+        font-weight: 600;
+        margin-bottom: 0.75rem; /* Space below label */
+        display: flex; /* Allow icon and text to align */
+        align-items: center;
+    }
+
+    .form-control, .form-select {
+        background-color: #34344a; /* Darker input background */
+        color: #ffffff; /* Changed to pure white for typed text */
+        border: 1px solid rgba(255, 255, 255, 0.15); /* Subtle border */
+        border-radius: 0.75rem; /* Rounded input fields */
+        padding: 0.75rem 1rem; /* More padding */
+        transition: all 0.3s ease;
+    }
+
+    /* Styles for placeholder text */
+    .form-control::placeholder {
+        color: #cccccc; /* Whiter grey for placeholder */
+        opacity: 1; /* Ensure consistent opacity across browsers */
+    }
+    .form-control::-webkit-input-placeholder { /* Webkit browsers */
+        color: #cccccc;
+    }
+    .form-control:-ms-input-placeholder { /* IE 10+ */
+        color: #cccccc;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #3f3f5a; /* Slightly lighter on focus */
+        border-color: #007bff; /* Primary color border on focus */
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Glow effect on focus */
+        color: #ffffff; /* White text on focus */
+    }
+
+    .btn-primary {
+        background-color: #007bff; /* Primary blue button */
+        border-color: #007bff;
+        font-weight: 700;
+        padding: 0.75rem 2.5rem; /* Larger button */
+        border-radius: 0.75rem; /* Rounded button */
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3); /* Button shadow */
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+        border-color: #0056b3;
+        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4); /* Stronger shadow on hover */
+    }
+
+    /* Message alerts styling */
+    .alert-danger {
+        background-color: #dc3545;
+        color: #ffffff;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Loading spinner */
+    .spinner-border {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-width: 0.2em;
+        color: #ffffff;
+    }
+
+    /* Specific styles for the description textarea */
+    #descriptionInput {
+        resize: none; /* Prevent user from manually resizing */
+        overflow: hidden; /* Hide scrollbar */
+        min-height: 50px; /* Set a minimum height */
+    }
+
+    /* Custom file input styling */
+    .custom-file-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem; /* Space between button and file name */
+        background-color: #34344a; /* Match other input backgrounds */
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 0.75rem;
+        padding: 0.25rem; /* Padding around the whole wrapper */
+        transition: all 0.3s ease;
+    }
+
+    .custom-file-input-wrapper:focus-within {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+    }
+
+    .custom-file-input-button {
+        background-color: #007bff; /* Primary blue button */
+        color: #ffffff;
+        border: none;
+        border-radius: 0.6rem; /* Slightly less rounded than wrapper */
+        padding: 0.6rem 1rem;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        flex-shrink: 0; /* Prevent button from shrinking */
+    }
+
+    .custom-file-input-button:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+    }
+
+    .custom-file-input-text {
+        color: #ffffff; /* White text for file name */
+        flex-grow: 1; /* Allow text to take available space */
+        padding: 0 0.5rem; /* Padding for the text */
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden; /* Hide overflow text */
+        text-overflow: ellipsis; /* Add ellipsis for overflow */
+    }
+
+    /* Hide the actual file input */
+    #fileInput, #thumbnailInput {
+        display: none;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container py-5 d-flex justify-content-center align-items-center" style="min-height: calc(100vh - var(--navbar-height, 56px));">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div id="errorContainer" class="alert alert-danger {{ '' if error else 'd-none' }} mb-4" role="alert">
+            <p id="errorMessage" class="mb-0">{{ error }}</p>
+        </div>
+
+        <div class="card upload-card">
+            <div class="card-body">
+                <h3 class="card-title text-center">Upload Video</h3>
+                <form id="uploadForm" action="/" enctype="multipart/form-data" method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label for="titleInput" class="form-label"><i class="bi bi-card-heading me-2"></i> Video Title</label>
+                            <input type="text" id="titleInput" name="videoTitle" class="form-control" autocomplete="off" required placeholder="Enter video title"/>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label for="authorInput" class="form-label"><i class="bi bi-person-circle me-2"></i> Author/Channel Name</label>
+                            <input type="text" id="authorInput" name="authorName" class="form-control" autocomplete="off" required placeholder="Enter author or channel name"/>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="descriptionInput" class="form-label"><i class="bi bi-file-earmark-text me-2"></i> Video Description</label>
+                        <textarea id="descriptionInput" name="videoDescription" class="form-control" placeholder="Enter a description for your video (optional)"></textarea>
+                    </div>
+
+                    <div class="row"> {# Added a new row for file inputs #}
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label"><i class="bi bi-folder-fill me-2"></i> Choose Video File (MP4)</label>
+                            <div class="custom-file-input-wrapper">
+                                <label for="fileInput" class="custom-file-input-button">Browse</label>
+                                <span id="fileNameDisplay" class="custom-file-input-text">No file chosen</span>
+                                <input type="file" id="fileInput" name="videoFile" accept="video/mp4" required/>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label"><i class="bi bi-image me-2"></i> Choose Thumbnail (Image)</label>
+                            <div class="custom-file-input-wrapper">
+                                <label for="thumbnailInput" class="custom-file-input-button">Browse</label>
+                                <span id="thumbnailNameDisplay" class="custom-file-input-text">No file chosen</span>
+                                <input type="file" id="thumbnailInput" name="thumbnailFile" accept="image/*" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="languageSelect" class="form-label"><i class="bi bi-globe me-2"></i> Select Language</label>
+                        <select id="languageSelect" name="language" class="form-select" required>
+                            <option value="">-- Select a Language --</option>
+                            <option value="english">English</option>
+                            <option value="ไทย">ไทย</option>
+                            <option value="spainish">español</option>
+                            <option value="french">français</option>
+                        </select>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <button type="submit" id="submitBtn" class="btn btn-primary">
+                            <span id="buttonText">Confirm</span>
+                            <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadForm = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const descriptionInput = document.getElementById('descriptionInput');
+        const fileInput = document.getElementById('fileInput'); // Get the video file input
+        const fileNameDisplay = document.getElementById('fileNameDisplay'); // Get the video file name display span
+        const thumbnailInput = document.getElementById('thumbnailInput'); // Get the new thumbnail input
+        const thumbnailNameDisplay = document.getElementById('thumbnailNameDisplay'); // Get the thumbnail name display span
+
+
+        // Function to adjust textarea height
+        function adjustTextareaHeight() {
+            descriptionInput.style.height = 'auto'; // Reset height to recalculate
+            descriptionInput.style.height = descriptionInput.scrollHeight + 'px'; // Set height based on content
+        }
+
+        // Adjust height on input
+        descriptionInput.addEventListener('input', adjustTextareaHeight);
+
+        // Adjust height on initial load in case there's pre-filled content
+        adjustTextareaHeight();
+
+        // Handle video file input change
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+            }
+        });
+
+        // Handle thumbnail input change
+        thumbnailInput.addEventListener('change', function() {
+            if (thumbnailInput.files.length > 0) {
+                thumbnailNameDisplay.textContent = thumbnailInput.files[0].name;
+            } else {
+                thumbnailNameDisplay.textContent = 'No file chosen';
+            }
+        });
+
+        uploadForm.addEventListener('submit', function(event) {
+            // Hide previous messages
+            errorContainer.classList.add('d-none');
+
+            // Get input fields
+            const titleInput = document.getElementById('titleInput');
+            const authorInput = document.getElementById('authorInput');
+            const languageSelect = document.getElementById('languageSelect');
+
+            // Basic client-side validation for required fields
+            if (titleInput.value.trim() === '') {
+                event.preventDefault(); // Prevent form submission
+                errorMessage.textContent = 'Please enter a video title.';
+                errorContainer.classList.remove('d-none');
+                return;
+            }
+
+            if (authorInput.value.trim() === '') {
+                event.preventDefault(); // Prevent form submission
+                errorMessage.textContent = 'Please enter the author or channel name.';
+                errorContainer.classList.remove('d-none');
+                return;
+            }
+
+            if (!fileInput.files.length) {
+                event.preventDefault(); // Prevent form submission
+                errorMessage.textContent = 'Please choose a video file.';
+                errorContainer.classList.remove('d-none');
+                return;
+            }
+
+            // Thumbnail is optional, so no validation needed here.
+            // If you want to make it required, uncomment the block below:
+            /*
+            if (!thumbnailInput.files.length) {
+                event.preventDefault();
+                errorMessage.textContent = 'Please choose a thumbnail image.';
+                errorContainer.classList.remove('d-none');
+                return;
+            }
+            */
+
+            if (languageSelect.value === "") {
+                event.preventDefault(); // Prevent form submission
+                errorMessage.textContent = 'Please select a language.';
+                errorContainer.classList.remove('d-none');
+                return;
+            }
+
+            // Show loading state
+            buttonText.textContent = 'Uploading...';
+            loadingSpinner.classList.remove('d-none');
+            submitBtn.disabled = true;
+        });
+    });
+</script>
+
+{% endblock %}
